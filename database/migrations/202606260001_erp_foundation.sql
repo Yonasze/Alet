@@ -162,6 +162,46 @@ create trigger units_set_updated_at
 before update on public.units
 for each row execute function public.set_updated_at();
 
+create or replace function public.current_user_organization_id()
+returns uuid
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select organization_id from public.profiles where id = auth.uid()
+$$;
+
+create or replace function public.current_user_is_project_member(target_project_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.user_projects
+    where user_id = auth.uid()
+      and project_id = target_project_id
+  )
+$$;
+
+create or replace function public.current_user_is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and role = 'admin'
+  )
+$$;
+
 alter table public.organizations enable row level security;
 alter table public.profiles enable row level security;
 alter table public.projects enable row level security;
@@ -172,69 +212,51 @@ alter table public.units enable row level security;
 alter table public.business_events enable row level security;
 alter table public.financial_transactions enable row level security;
 
-create policy "profiles can view same organization"
+create policy "users can view their organization"
+on public.organizations for select
+using (id = public.current_user_organization_id());
+
+create policy "users can view same-organization profiles"
 on public.profiles for select
-using (
-  organization_id in (
-    select organization_id from public.profiles where id = auth.uid()
-  )
-);
+using (organization_id = public.current_user_organization_id());
 
 create policy "project members can view assigned projects"
 on public.projects for select
-using (
-  id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(id));
 
 create policy "project members can view assigned project users"
 on public.user_projects for select
-using (
-  project_id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(project_id));
 
 create policy "project members can view buildings"
 on public.buildings for select
-using (
-  project_id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(project_id));
 
 create policy "project members can view floors"
 on public.floors for select
-using (
-  project_id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(project_id));
 
 create policy "project members can view units"
 on public.units for select
-using (
-  project_id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(project_id));
 
 create policy "project members can view business events"
 on public.business_events for select
-using (
-  project_id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(project_id));
 
 create policy "project members can view ledger transactions"
 on public.financial_transactions for select
-using (
-  project_id in (
-    select project_id from public.user_projects where user_id = auth.uid()
-  )
-);
+using (public.current_user_is_project_member(project_id));
+
+create policy "admins can manage organization projects"
+on public.projects for all
+using (public.current_user_is_admin() and organization_id = public.current_user_organization_id())
+with check (public.current_user_is_admin() and organization_id = public.current_user_organization_id());
+
+create policy "admins can manage project memberships"
+on public.user_projects for all
+using (public.current_user_is_admin() and organization_id = public.current_user_organization_id())
+with check (public.current_user_is_admin() and organization_id = public.current_user_organization_id());
 
 create index idx_user_projects_user_id on public.user_projects(user_id);
 create index idx_user_projects_project_id on public.user_projects(project_id);
