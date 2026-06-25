@@ -1,12 +1,18 @@
 import Link from 'next/link'
-import { Building2, LockKeyhole } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
-export default function AdminLoginPage() {
+import { LoginForm } from './login-form'
+
+type AdminLoginPageProps = {
+  searchParams: Promise<{ next?: string }>
+}
+
+export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
+  const { next } = await searchParams
+  const nextPath = next?.startsWith('/') ? next : '/erp'
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#eef1ed] px-4 py-10">
       <div className="w-full max-w-md space-y-6">
@@ -20,23 +26,10 @@ export default function AdminLoginPage() {
         <Card className="rounded-lg">
           <CardHeader>
             <CardTitle>Admin Login</CardTitle>
-            <CardDescription>Supabase authentication will protect project-scoped ERP access.</CardDescription>
+            <CardDescription>Sign in with the admin user created in Supabase Auth.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" autoComplete="email" placeholder="admin@alet.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" autoComplete="current-password" />
-              </div>
-              <Button className="w-full" type="submit">
-                <LockKeyhole className="size-4" aria-hidden="true" />
-                Continue to ERP
-              </Button>
-            </form>
+            <LoginForm nextPath={nextPath} />
           </CardContent>
         </Card>
       </div>
