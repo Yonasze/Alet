@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
+const sessionCookieName = 'alet-erp-session'
 const supabaseCookiePrefixes = ['sb-', 'supabase-auth-token'] as const
 
 function hasSupabaseSessionCookie(request: NextRequest): boolean {
-  return request.cookies.getAll().some((cookie) =>
+  return request.cookies.has(sessionCookieName) || request.cookies.getAll().some((cookie) =>
     supabaseCookiePrefixes.some((prefix) => cookie.name.startsWith(prefix)),
   )
 }
