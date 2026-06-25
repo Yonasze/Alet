@@ -18,6 +18,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+import { LogoutButton } from './logout-button'
+
 const navigationItems = [
   { label: 'Dashboard', href: '/erp', icon: LayoutDashboard },
   { label: 'Projects', href: '/erp/projects', icon: Building2 },
@@ -99,6 +101,7 @@ export function ErpShell({ children }: ErpShellProps) {
               <Button variant="secondary" size="sm">
                 Alet Main Project
               </Button>
+              <LogoutButton />
             </div>
           </div>
         </header>
