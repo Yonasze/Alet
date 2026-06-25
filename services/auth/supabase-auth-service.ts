@@ -1,5 +1,3 @@
-import 'server-only'
-
 export type SupabasePasswordSignInResult = {
   accessToken: string
   refreshToken: string
