@@ -46,12 +46,40 @@ export type Organization = {
   createdAt: string
 }
 
+export type ProjectStatus = 'planning' | 'active' | 'paused' | 'completed'
+
 export type Project = {
   id: string
   organizationId: string
   name: string
   code: string
-  status: 'planning' | 'active' | 'paused' | 'completed'
+  status: ProjectStatus
+  location?: string
+  activeUnitCount?: number
+  soldUnitCount?: number
+  reservedUnitCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type Building = {
+  id: string
+  organizationId: string
+  projectId: string
+  name: string
+  floorCount: number
+  unitCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type Floor = {
+  id: string
+  organizationId: string
+  projectId: string
+  buildingId: string
+  floorNumber: number
+  unitCount: number
   createdAt: string
   updatedAt: string
 }
@@ -70,6 +98,15 @@ export type Unit = {
   createdAt: string
   updatedAt: string
 }
+
+export type ProjectStructure = {
+  project: Project
+  buildings: Building[]
+  floors: Floor[]
+  units: Unit[]
+}
+
+export type UnitStatusSummary = Record<UnitStatus, number>
 
 export type BusinessEvent = {
   id: string
