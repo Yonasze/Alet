@@ -1,0 +1,29 @@
+{
+  "node": {
+    "00bae4399447d7e9a8cab4c5c4f7fd6b3f56e29ab2": {
+      "workers": {
+        "app/erp/projects/page": {
+          "moduleId": "[project]/.next-internal/server/app/erp/projects/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/admin/login/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "logoutAction",
+          "filename": "app/admin/login/actions.ts"
+        }
+      },
+      "exportedName": "logoutAction",
+      "filename": "app/admin/login/actions.ts"
+    },
+    "60a020a6909ec9bd29a04106d08a91f2fd313b24f8": {
+      "workers": {
+        "app/erp/projects/page": {
+          "moduleId": "[project]/.next-internal/server/app/erp/projects/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/admin/login/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "loginAction",
+          "filename": "app/admin/login/actions.ts"
+        }
+      },
+      "exportedName": "loginAction",
+      "filename": "app/admin/login/actions.ts"
+    }
+  },
+  "edge": {}
+}
