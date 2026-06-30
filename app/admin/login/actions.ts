@@ -54,5 +54,5 @@ export async function logoutAction() {
   const cookieStore = await cookies()
   cookieStore.delete(sessionCookieName)
   cookieStore.delete(refreshCookieName)
-  redirect('/admin/login')
+  redirect('/erp/login')
 }
