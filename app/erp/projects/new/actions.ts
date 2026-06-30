@@ -12,6 +12,7 @@ export type ProjectWizardState = {
 }
 
 type UnitConfiguration = {
+  unit_id_pattern: string
   type: string
   bathrooms: number
   balconies: number
@@ -45,6 +46,7 @@ function parseJson<T>(formData: FormData, key: string, fallback: T): T {
 
 function validUnit(unit: UnitConfiguration) {
   return Boolean(
+    unit.unit_id_pattern?.includes('{floor}') &&
     unit.type &&
     Number(unit.net_area_sqm) > 0 &&
     Number(unit.gross_area_sqm) >= Number(unit.net_area_sqm) &&
@@ -64,6 +66,8 @@ export async function createProjectAction(
   }
 
   const totalFloors = Math.max(1, numberValue(formData, 'total_floors', 1))
+  const typicalFloorStart = numberValue(formData, 'typical_floor_start', 1)
+  const typicalFloorEnd = numberValue(formData, 'typical_floor_end', totalFloors)
   const typicalUnits = parseJson<UnitConfiguration[]>(formData, 'typical_units', [])
   const specialFloorConfigurations = parseJson<SpecialFloorConfiguration[]>(
     formData,
@@ -71,8 +75,16 @@ export async function createProjectAction(
     [],
   )
 
+  if (
+    typicalFloorStart < 1 ||
+    typicalFloorEnd < typicalFloorStart ||
+    typicalFloorEnd > totalFloors
+  ) {
+    return { error: 'Choose a valid typical-floor range within the numbered building floors.' }
+  }
+
   if (typicalUnits.length === 0 || typicalUnits.some((unit) => !validUnit(unit))) {
-    return { error: 'Add at least one valid typical-floor unit. Gross area must be at least the net area.' }
+    return { error: 'Add at least one valid typical-floor unit. Unit IDs must include {floor}, and gross area must be at least the net area.' }
   }
 
   const specialFloorNumbers = new Set<number>()
@@ -90,6 +102,12 @@ export async function createProjectAction(
     specialFloorNumbers.add(Number(floor.floor_number))
   }
 
+  for (let floor = 1; floor <= totalFloors; floor += 1) {
+    if ((floor < typicalFloorStart || floor > typicalFloorEnd) && !specialFloorNumbers.has(floor)) {
+      return { error: `Floor ${floor} has no layout. Include it in the typical range or select it as a special floor.` }
+    }
+  }
+
   const payload = {
     name: stringValue(formData, 'name'),
     code: stringValue(formData, 'code'),
@@ -104,6 +122,8 @@ export async function createProjectAction(
     longitude: stringValue(formData, 'longitude'),
     google_maps_url: stringValue(formData, 'google_maps_url'),
     total_floors: totalFloors,
+    typical_floor_start: typicalFloorStart,
+    typical_floor_end: typicalFloorEnd,
     floors_completed: numberValue(formData, 'floors_completed'),
     typical_units: typicalUnits,
     special_floor_configurations: specialFloorConfigurations,
