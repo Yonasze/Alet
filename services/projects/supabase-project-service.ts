@@ -118,7 +118,7 @@ export type ErpProjectListItem = {
   total_floors: number
   floors_completed: number
   updated_at: string
-  project_publications: Array<{ status: string }>
+  project_publications: { status: string } | Array<{ status: string }> | null
 }
 
 export async function getErpProjects(): Promise<ErpProjectListItem[]> {
