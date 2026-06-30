@@ -155,10 +155,17 @@ export default async function PublicProjectPage({ params }: ProjectPageProps) {
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
                   <p className="flex items-center gap-2">
                     <Ruler className="size-4" aria-hidden="true" />
-                    {unitType.minimum_size_sqm === unitType.maximum_size_sqm
-                      ? `${unitType.minimum_size_sqm} m²`
-                      : `${unitType.minimum_size_sqm}–${unitType.maximum_size_sqm} m²`}
+                    Net area: {unitType.minimum_net_area_sqm === unitType.maximum_net_area_sqm
+                      ? `${unitType.minimum_net_area_sqm} m²`
+                      : `${unitType.minimum_net_area_sqm}–${unitType.maximum_net_area_sqm} m²`}
                   </p>
+                  <p className="flex items-center gap-2">
+                    <Ruler className="size-4" aria-hidden="true" />
+                    Gross area: {unitType.minimum_gross_area_sqm === unitType.maximum_gross_area_sqm
+                      ? `${unitType.minimum_gross_area_sqm} m²`
+                      : `${unitType.minimum_gross_area_sqm}–${unitType.maximum_gross_area_sqm} m²`}
+                  </p>
+                  <p className="text-xs">Gross area includes common areas and the parking allocation.</p>
                   {unitType.bedrooms !== null ? <p>{unitType.bedrooms === 0 ? 'Studio' : `${unitType.bedrooms} bedrooms`}</p> : null}
                 </CardContent>
               </Card>
