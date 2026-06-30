@@ -154,13 +154,15 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             </div>
             {units.length > 0 ? (
               <Table>
-                <TableHeader><TableRow><TableHead>Unit</TableHead><TableHead>Category</TableHead><TableHead>Size</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Unit</TableHead><TableHead>Category</TableHead><TableHead>Net area</TableHead><TableHead>Gross area</TableHead><TableHead>Description</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {units.slice(0, 20).map((unit) => (
                     <TableRow key={text(unit.id)}>
                       <TableCell className="font-medium">{text(unit.unit_number)}</TableCell>
                       <TableCell className="capitalize">{text(unit.category)}</TableCell>
-                      <TableCell>{number(unit.size_sqm)} m²</TableCell>
+                      <TableCell>{number(unit.net_area_sqm)} m²</TableCell>
+                      <TableCell>{number(unit.gross_area_sqm)} m²</TableCell>
+                      <TableCell className="max-w-64 text-muted-foreground">{text(unit.unit_description)}</TableCell>
                       <TableCell><Badge variant="outline" className="capitalize">{text(unit.status).replace('_', ' ')}</Badge></TableCell>
                     </TableRow>
                   ))}
