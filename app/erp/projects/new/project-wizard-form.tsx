@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { useActionState, useState } from 'react'
+import { CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +12,45 @@ import { Textarea } from '@/components/ui/textarea'
 import { createProjectAction, type ProjectWizardState } from './actions'
 
 const initialState: ProjectWizardState = {}
+
+type UnitDraft = {
+  id: string
+  type: 'studio' | '1br' | '2br' | '3br' | '4br' | 'commercial'
+  bathrooms: number
+  balconies: number
+  net_area_sqm: number
+  gross_area_sqm: number
+  price: number
+  description: string
+}
+
+type SpecialFloorDraft = {
+  id: string
+  floor_number: number
+  units: UnitDraft[]
+}
+
+const unitLabels: Record<UnitDraft['type'], string> = {
+  studio: 'Studio',
+  '1br': '1 Bedroom',
+  '2br': '2 Bedroom',
+  '3br': '3 Bedroom',
+  '4br': '4 Bedroom',
+  commercial: 'Commercial',
+}
+
+function newUnit(id: string, type: UnitDraft['type'] = 'studio'): UnitDraft {
+  return {
+    id,
+    type,
+    bathrooms: type === 'studio' ? 1 : 2,
+    balconies: 0,
+    net_area_sqm: type === 'studio' ? 45 : 100,
+    gross_area_sqm: type === 'studio' ? 60 : 125,
+    price: 0,
+    description: '',
+  }
+}
 
 type StepProps = {
   number: number
@@ -48,11 +87,124 @@ function Field({ label, name, ...props }: { label: string; name: string } & Reac
   )
 }
 
+type UnitEditorProps = {
+  unit: UnitDraft
+  index: number
+  canRemove: boolean
+  onChange: (unit: UnitDraft) => void
+  onRemove: () => void
+}
+
+function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorProps) {
+  const updateNumber = (key: 'bathrooms' | 'balconies' | 'net_area_sqm' | 'gross_area_sqm' | 'price', value: string) => {
+    onChange({ ...unit, [key]: Number(value) })
+  }
+
+  const invalidArea = unit.gross_area_sqm < unit.net_area_sqm
+
+  return (
+    <div className="rounded-xl border bg-background p-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="font-medium">Unit {index + 1}</p>
+        <Button type="button" variant="ghost" size="sm" onClick={onRemove} disabled={!canRemove}>
+          <Trash2 className="size-4" aria-hidden="true" />
+          Remove
+        </Button>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-2">
+          <Label>Unit type</Label>
+          <select
+            value={unit.type}
+            onChange={(event) => onChange({ ...unit, type: event.target.value as UnitDraft['type'] })}
+            className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+          >
+            {Object.entries(unitLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label>Net area (m²)</Label>
+          <Input type="number" min="1" step="0.01" value={unit.net_area_sqm} onChange={(e) => updateNumber('net_area_sqm', e.target.value)} required />
+          <p className="text-xs text-muted-foreground">Area inside the unit itself.</p>
+        </div>
+        <div className="space-y-2">
+          <Label>Gross area (m²)</Label>
+          <Input
+            type="number"
+            min={unit.net_area_sqm}
+            step="0.01"
+            value={unit.gross_area_sqm}
+            onChange={(e) => updateNumber('gross_area_sqm', e.target.value)}
+            aria-invalid={invalidArea}
+            required
+          />
+          <p className="text-xs text-muted-foreground">Includes corridors, lobby, common areas and parking allocation.</p>
+        </div>
+        <div className="space-y-2">
+          <Label>Bathrooms</Label>
+          <Input type="number" min="0" step="0.5" value={unit.bathrooms} onChange={(e) => updateNumber('bathrooms', e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Balconies</Label>
+          <Input type="number" min="0" value={unit.balconies} onChange={(e) => updateNumber('balconies', e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Unit price (ETB)</Label>
+          <Input type="number" min="0" step="0.01" value={unit.price} onChange={(e) => updateNumber('price', e.target.value)} required />
+        </div>
+        <div className="space-y-2 md:col-span-3">
+          <Label>Additional description</Label>
+          <Textarea
+            value={unit.description}
+            onChange={(event) => onChange({ ...unit, description: event.target.value })}
+            placeholder="Orientation, view, layout, terrace or other details specific to this unit position."
+          />
+        </div>
+      </div>
+      {invalidArea ? <p className="mt-3 text-sm text-destructive">Gross area cannot be smaller than net area.</p> : null}
+    </div>
+  )
+}
+
 export function ProjectWizardForm() {
   const [state, formAction, isPending] = useActionState(createProjectAction, initialState)
+  const [typicalUnits, setTypicalUnits] = useState<UnitDraft[]>([
+    newUnit('typical-1', 'studio'),
+    newUnit('typical-2', '2br'),
+  ])
+  const [specialFloors, setSpecialFloors] = useState<SpecialFloorDraft[]>([])
+
+  const addTypicalUnit = () => {
+    setTypicalUnits((units) => [...units, newUnit(`typical-${Date.now()}`, '1br')])
+  }
+
+  const updateTypicalUnit = (id: string, unit: UnitDraft) => {
+    setTypicalUnits((units) => units.map((item) => item.id === id ? unit : item))
+  }
+
+  const addSpecialFloor = () => {
+    const id = `special-${Date.now()}`
+    setSpecialFloors((floors) => [
+      ...floors,
+      { id, floor_number: floors.length + 1, units: [newUnit(`${id}-unit-1`, 'studio')] },
+    ])
+  }
+
+  const updateSpecialFloor = (id: string, update: (floor: SpecialFloorDraft) => SpecialFloorDraft) => {
+    setSpecialFloors((floors) => floors.map((floor) => floor.id === id ? update(floor) : floor))
+  }
+
+  const serializedTypicalUnits = typicalUnits.map(({ id: _id, ...unit }) => unit)
+  const serializedSpecialFloors = specialFloors.map(({ id: _id, units, ...floor }) => ({
+    ...floor,
+    units: units.map(({ id: _unitId, ...unit }) => unit),
+  }))
 
   return (
     <form action={formAction} className="space-y-6">
+      <input type="hidden" name="typical_units" value={JSON.stringify(serializedTypicalUnits)} />
+      <input type="hidden" name="special_floor_configurations" value={JSON.stringify(serializedSpecialFloors)} />
+
       <Step number={1} title="Project identity and responsible team" description="One project is one building. The signed-in administrator becomes the initial responsible user.">
         <div className="grid gap-4 md:grid-cols-3">
           <Field label="Project name" name="name" placeholder="Alet Bole Residence" required />
@@ -79,46 +231,97 @@ export function ProjectWizardForm() {
         </div>
       </Step>
 
-      <Step number={4} title="Typical-floor configuration" description="Create the first residential or commercial unit type and repeat it across typical floors.">
-        <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Unit type code" name="unit_type_code" placeholder="2br" required />
-          <Field label="Unit type name" name="unit_type_name" placeholder="Two Bedroom Apartment" required />
-          <div className="space-y-2">
-            <Label htmlFor="unit_category">Category</Label>
-            <select id="unit_category" name="unit_category" className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm">
-              <option value="residential">Residential</option>
-              <option value="commercial">Commercial</option>
-            </select>
-          </div>
-          <Field label="Units per typical floor" name="units_per_floor" type="number" min="1" defaultValue="4" required />
-          <Field label="Unit size (m²)" name="unit_size_sqm" type="number" min="1" step="0.01" defaultValue="120" required />
-          <Field label="Bedrooms" name="bedrooms" type="number" min="0" defaultValue="2" />
-          <Field label="Bathrooms" name="bathrooms" type="number" min="0" step="0.5" defaultValue="2" />
-          <Field label="Balconies" name="balconies" type="number" min="0" defaultValue="1" />
-          <Field label="Unit type description" name="unit_type_description" placeholder="Corner apartment with..." />
+      <Step number={4} title="Typical-floor configuration" description="Build the exact mixed layout repeated on every typical floor. Add as many studio, 1BR, 2BR, 3BR, 4BR or commercial units as needed.">
+        <div className="space-y-4">
+          {typicalUnits.map((unit, index) => (
+            <UnitEditor
+              key={unit.id}
+              unit={unit}
+              index={index}
+              canRemove={typicalUnits.length > 1}
+              onChange={(next) => updateTypicalUnit(unit.id, next)}
+              onRemove={() => setTypicalUnits((units) => units.filter((item) => item.id !== unit.id))}
+            />
+          ))}
+          <Button type="button" variant="outline" onClick={addTypicalUnit}>
+            <Plus className="size-4" aria-hidden="true" />
+            Add unit to typical floor
+          </Button>
         </div>
       </Step>
 
-      <Step number={5} title="Special-floor overrides" description="Optional independent layout for podium, penthouse or other special floors.">
-        <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Special floor numbers" name="special_floors" placeholder="1, 10" />
-          <Field label="Units per special floor" name="special_units_per_floor" type="number" min="1" defaultValue="2" />
-          <Field label="Special unit size (m²)" name="special_unit_size_sqm" type="number" min="1" step="0.01" defaultValue="180" />
+      <Step number={5} title="Special-floor configurations" description="Each special floor has its own independent layout and can contain a different mix and number of units.">
+        <div className="space-y-5">
+          {specialFloors.map((floor) => (
+            <div key={floor.id} className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div className="w-48 space-y-2">
+                  <Label>Special floor number</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={floor.floor_number}
+                    onChange={(event) => updateSpecialFloor(floor.id, (item) => ({ ...item, floor_number: Number(event.target.value) }))}
+                    required
+                  />
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setSpecialFloors((floors) => floors.filter((item) => item.id !== floor.id))}>
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  Remove special floor
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {floor.units.map((unit, index) => (
+                  <UnitEditor
+                    key={unit.id}
+                    unit={unit}
+                    index={index}
+                    canRemove={floor.units.length > 1}
+                    onChange={(next) => updateSpecialFloor(floor.id, (item) => ({
+                      ...item,
+                      units: item.units.map((current) => current.id === unit.id ? next : current),
+                    }))}
+                    onRemove={() => updateSpecialFloor(floor.id, (item) => ({
+                      ...item,
+                      units: item.units.filter((current) => current.id !== unit.id),
+                    }))}
+                  />
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => updateSpecialFloor(floor.id, (item) => ({
+                    ...item,
+                    units: [...item.units, newUnit(`${floor.id}-unit-${Date.now()}`, '1br')],
+                  }))}
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  Add unit to this special floor
+                </Button>
+              </div>
+            </div>
+          ))}
+          <Button type="button" variant="outline" onClick={addSpecialFloor}>
+            <Plus className="size-4" aria-hidden="true" />
+            Add special floor
+          </Button>
+          {specialFloors.length === 0 ? <p className="text-sm text-muted-foreground">No special floors. Every floor currently uses the typical layout.</p> : null}
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">Leave the floor list empty when every floor follows the typical template.</p>
       </Step>
 
-      <Step number={6} title="Unit generation and validation" description="The database generates unique unit numbers and rejects conflicts transactionally.">
+      <Step number={6} title="Unit generation and validation" description="The database creates one inventory record per configured position on each floor and rejects duplicate unit numbers or invalid areas.">
         <div className="rounded-lg border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-          Typical units use <code>{'{floor}-01'}</code>, <code>{'{floor}-02'}</code> and onward. Special-floor units use an S prefix. Apartments are generated as independent inventory and cannot be split or combined.
+          Typical units use floor and position numbers such as <code>5-01</code>. Special-floor units use an S prefix such as <code>10-S01</code>. Apartments remain independent inventory and cannot be split or combined.
         </div>
       </Step>
 
-      <Step number={7} title="ETB pricing, VAT and parking price" description="The initial price becomes the first immutable history entry.">
-        <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Starting price (ETB)" name="starting_price" type="number" min="0" step="0.01" required />
+      <Step number={7} title="ETB pricing and VAT" description="Enter each unit position's ETB price above. Gross area includes corridors, lobby, common areas and the parking allocation, so parking is not priced separately.">
+        <div className="grid gap-4 md:grid-cols-2">
           <Field label="VAT rate (%)" name="vat_rate" type="number" min="0" step="0.01" defaultValue="15" required />
-          <Field label="Parking price (ETB)" name="parking_price" type="number" min="0" step="0.01" defaultValue="0" required />
+          <div className="rounded-lg border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
+            Price history starts from the ETB values entered in the typical and special floor unit rows. Later price changes create new history records.
+          </div>
         </div>
       </Step>
 
