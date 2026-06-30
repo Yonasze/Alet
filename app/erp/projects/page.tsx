@@ -43,7 +43,12 @@ export default async function ProjectsPage() {
       ) : (
         <section className="grid gap-4 lg:grid-cols-2">
           {projects.map((project) => {
-            const publication = project.project_publications[0]?.status ?? 'draft'
+            const relationship = project.project_publications as unknown
+            const publication = Array.isArray(relationship)
+              ? relationship[0]?.status ?? 'draft'
+              : relationship && typeof relationship === 'object' && 'status' in relationship
+                ? String((relationship as { status?: unknown }).status ?? 'draft')
+                : 'draft'
 
             return (
               <Card key={project.id} className="rounded-lg">
