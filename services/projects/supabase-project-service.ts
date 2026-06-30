@@ -65,6 +65,10 @@ export type PublicUnitType = {
   category: 'residential' | 'commercial'
   bedrooms: number | null
   bathrooms: number | null
+  minimum_net_area_sqm: number
+  maximum_net_area_sqm: number
+  minimum_gross_area_sqm: number
+  maximum_gross_area_sqm: number
   minimum_size_sqm: number
   maximum_size_sqm: number
   starting_price_etb: number | null
@@ -147,7 +151,7 @@ export async function getErpProjectWorkspace(projectId: string): Promise<ErpProj
   const [projects, floors, units, unitTypes, prices, media, milestones, publications, audit, team] = await Promise.all([
     supabaseRequest<Array<Record<string, unknown>>>(`projects?select=*&id=eq.${id}&limit=1`, auth),
     supabaseRequest<Array<Record<string, unknown>>>(`project_floors?select=*&project_id=eq.${id}&order=sequence.asc,floor_number.asc`, auth),
-    supabaseRequest<Array<Record<string, unknown>>>(`units?select=id,unit_number,status,category,size_sqm,bedrooms,bathrooms,balconies,orientation,base_price,vat_rate,parking_price,project_floor_id,unit_type_id&project_id=eq.${id}&order=unit_number.asc`, auth),
+    supabaseRequest<Array<Record<string, unknown>>>(`units?select=id,unit_number,status,category,size_sqm,net_area_sqm,gross_area_sqm,unit_description,bedrooms,bathrooms,balconies,orientation,base_price,vat_rate,project_floor_id,unit_type_id&project_id=eq.${id}&order=unit_number.asc`, auth),
     supabaseRequest<Array<Record<string, unknown>>>(`unit_types?select=*&project_id=eq.${id}&order=name.asc`, auth),
     supabaseRequest<Array<Record<string, unknown>>>(`project_prices?select=*&project_id=eq.${id}&order=effective_from.desc`, auth),
     supabaseRequest<Array<Record<string, unknown>>>(`project_media?select=*&project_id=eq.${id}&order=is_hero.desc,sort_order.asc`, auth),
