@@ -65,8 +65,8 @@ export async function createProjectAction(
     return { error: 'Your ERP session expired. Sign in again.' }
   }
 
-  const totalFloors = Math.max(1, numberValue(formData, 'total_floors', 1))
-  const typicalFloorStart = numberValue(formData, 'typical_floor_start', 1)
+  const totalFloors = Math.max(0, numberValue(formData, 'total_floors', 0))
+  const typicalFloorStart = numberValue(formData, 'typical_floor_start', 0)
   const typicalFloorEnd = numberValue(formData, 'typical_floor_end', totalFloors)
   const typicalUnits = parseJson<UnitConfiguration[]>(formData, 'typical_units', [])
   const specialFloorConfigurations = parseJson<SpecialFloorConfiguration[]>(
@@ -76,7 +76,7 @@ export async function createProjectAction(
   )
 
   if (
-    typicalFloorStart < 1 ||
+    typicalFloorStart < 0 ||
     typicalFloorEnd < typicalFloorStart ||
     typicalFloorEnd > totalFloors
   ) {
@@ -102,7 +102,7 @@ export async function createProjectAction(
     specialFloorNumbers.add(Number(floor.floor_number))
   }
 
-  for (let floor = 1; floor <= totalFloors; floor += 1) {
+  for (let floor = 0; floor <= totalFloors; floor += 1) {
     if ((floor < typicalFloorStart || floor > typicalFloorEnd) && !specialFloorNumbers.has(floor)) {
       return { error: `Floor ${floor} has no layout. Include it in the typical range or select it as a special floor.` }
     }
@@ -127,7 +127,6 @@ export async function createProjectAction(
     floors_completed: numberValue(formData, 'floors_completed'),
     typical_units: typicalUnits,
     special_floor_configurations: specialFloorConfigurations,
-    vat_rate: numberValue(formData, 'vat_rate', 15),
     amenities: stringValue(formData, 'amenities')
       .split(',')
       .map((value) => value.trim())
