@@ -11,6 +11,21 @@ export type ProjectWizardState = {
   error?: string
 }
 
+type UnitConfiguration = {
+  type: string
+  bathrooms: number
+  balconies: number
+  net_area_sqm: number
+  gross_area_sqm: number
+  price: number
+  description: string
+}
+
+type SpecialFloorConfiguration = {
+  floor_number: number
+  units: UnitConfiguration[]
+}
+
 function stringValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim()
 }
@@ -18,6 +33,23 @@ function stringValue(formData: FormData, key: string) {
 function numberValue(formData: FormData, key: string, fallback = 0) {
   const parsed = Number(stringValue(formData, key))
   return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function parseJson<T>(formData: FormData, key: string, fallback: T): T {
+  try {
+    return JSON.parse(stringValue(formData, key)) as T
+  } catch {
+    return fallback
+  }
+}
+
+function validUnit(unit: UnitConfiguration) {
+  return Boolean(
+    unit.type &&
+    Number(unit.net_area_sqm) > 0 &&
+    Number(unit.gross_area_sqm) >= Number(unit.net_area_sqm) &&
+    Number(unit.price) >= 0,
+  )
 }
 
 export async function createProjectAction(
@@ -32,10 +64,31 @@ export async function createProjectAction(
   }
 
   const totalFloors = Math.max(1, numberValue(formData, 'total_floors', 1))
-  const specialFloors = stringValue(formData, 'special_floors')
-    .split(',')
-    .map((value) => Number(value.trim()))
-    .filter((value) => Number.isInteger(value) && value >= 1 && value <= totalFloors)
+  const typicalUnits = parseJson<UnitConfiguration[]>(formData, 'typical_units', [])
+  const specialFloorConfigurations = parseJson<SpecialFloorConfiguration[]>(
+    formData,
+    'special_floor_configurations',
+    [],
+  )
+
+  if (typicalUnits.length === 0 || typicalUnits.some((unit) => !validUnit(unit))) {
+    return { error: 'Add at least one valid typical-floor unit. Gross area must be at least the net area.' }
+  }
+
+  const specialFloorNumbers = new Set<number>()
+  for (const floor of specialFloorConfigurations) {
+    if (
+      !Number.isInteger(Number(floor.floor_number)) ||
+      Number(floor.floor_number) < 1 ||
+      Number(floor.floor_number) > totalFloors ||
+      specialFloorNumbers.has(Number(floor.floor_number)) ||
+      floor.units.length === 0 ||
+      floor.units.some((unit) => !validUnit(unit))
+    ) {
+      return { error: 'Each special floor needs a unique valid floor number and at least one valid unit.' }
+    }
+    specialFloorNumbers.add(Number(floor.floor_number))
+  }
 
   const payload = {
     name: stringValue(formData, 'name'),
@@ -52,21 +105,9 @@ export async function createProjectAction(
     google_maps_url: stringValue(formData, 'google_maps_url'),
     total_floors: totalFloors,
     floors_completed: numberValue(formData, 'floors_completed'),
-    special_floors: specialFloors,
-    units_per_floor: Math.max(1, numberValue(formData, 'units_per_floor', 1)),
-    special_units_per_floor: Math.max(1, numberValue(formData, 'special_units_per_floor', 1)),
-    unit_type_code: stringValue(formData, 'unit_type_code'),
-    unit_type_name: stringValue(formData, 'unit_type_name'),
-    unit_category: stringValue(formData, 'unit_category') || 'residential',
-    unit_type_description: stringValue(formData, 'unit_type_description'),
-    unit_size_sqm: numberValue(formData, 'unit_size_sqm'),
-    special_unit_size_sqm: numberValue(formData, 'special_unit_size_sqm'),
-    bedrooms: stringValue(formData, 'bedrooms'),
-    bathrooms: stringValue(formData, 'bathrooms'),
-    balconies: numberValue(formData, 'balconies'),
-    starting_price: numberValue(formData, 'starting_price'),
+    typical_units: typicalUnits,
+    special_floor_configurations: specialFloorConfigurations,
     vat_rate: numberValue(formData, 'vat_rate', 15),
-    parking_price: numberValue(formData, 'parking_price'),
     amenities: stringValue(formData, 'amenities')
       .split(',')
       .map((value) => value.trim())
@@ -83,8 +124,8 @@ export async function createProjectAction(
     publish: formData.get('publish') === 'on',
   }
 
-  if (!payload.name || !payload.code || !payload.unit_type_code || !payload.unit_type_name) {
-    return { error: 'Project identity and the initial unit type are required.' }
+  if (!payload.name || !payload.code) {
+    return { error: 'Project name and code are required.' }
   }
 
   try {
