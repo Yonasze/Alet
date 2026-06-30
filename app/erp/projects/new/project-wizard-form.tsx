@@ -15,6 +15,7 @@ const initialState: ProjectWizardState = {}
 
 type UnitDraft = {
   id: string
+  unit_id_pattern: string
   type: 'studio' | '1br' | '2br' | '3br' | '4br' | 'commercial'
   bathrooms: number
   balconies: number
@@ -39,9 +40,18 @@ const unitLabels: Record<UnitDraft['type'], string> = {
   commercial: 'Commercial',
 }
 
-function newUnit(id: string, type: UnitDraft['type'] = 'studio'): UnitDraft {
+function unitLetter(index: number) {
+  return String.fromCharCode(65 + (index % 26))
+}
+
+function newUnit(
+  id: string,
+  type: UnitDraft['type'] = 'studio',
+  unitIdPattern = 'T-{floor}A',
+): UnitDraft {
   return {
     id,
+    unit_id_pattern: unitIdPattern,
     type,
     bathrooms: type === 'studio' ? 1 : 2,
     balconies: 0,
@@ -113,6 +123,16 @@ function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorPr
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-2">
+          <Label>Editable unit ID</Label>
+          <Input
+            value={unit.unit_id_pattern}
+            onChange={(event) => onChange({ ...unit, unit_id_pattern: event.target.value })}
+            placeholder="T-{floor}A"
+            required
+          />
+          <p className="text-xs text-muted-foreground">Keep {'{floor}'} in the ID. Example: T-3A.</p>
+        </div>
+        <div className="space-y-2">
           <Label>Unit type</Label>
           <select
             value={unit.type}
@@ -168,31 +188,51 @@ function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorPr
 
 export function ProjectWizardForm() {
   const [state, formAction, isPending] = useActionState(createProjectAction, initialState)
+  const [totalFloors, setTotalFloors] = useState(10)
+  const [typicalFloorStart, setTypicalFloorStart] = useState(1)
+  const [typicalFloorEnd, setTypicalFloorEnd] = useState(10)
   const [typicalUnits, setTypicalUnits] = useState<UnitDraft[]>([
-    newUnit('typical-1', 'studio'),
-    newUnit('typical-2', '2br'),
+    newUnit('typical-1', 'studio', 'T-{floor}A'),
+    newUnit('typical-2', '2br', 'T-{floor}B'),
   ])
   const [specialFloors, setSpecialFloors] = useState<SpecialFloorDraft[]>([])
 
   const addTypicalUnit = () => {
-    setTypicalUnits((units) => [...units, newUnit(`typical-${Date.now()}`, '1br')])
+    setTypicalUnits((units) => [
+      ...units,
+      newUnit(`typical-${Date.now()}`, '1br', `T-{floor}${unitLetter(units.length)}`),
+    ])
   }
 
   const updateTypicalUnit = (id: string, unit: UnitDraft) => {
     setTypicalUnits((units) => units.map((item) => item.id === id ? unit : item))
   }
 
-  const addSpecialFloor = () => {
-    const id = `special-${Date.now()}`
-    setSpecialFloors((floors) => [
-      ...floors,
-      { id, floor_number: floors.length + 1, units: [newUnit(`${id}-unit-1`, 'studio')] },
-    ])
+  const toggleSpecialFloor = (floorNumber: number) => {
+    setSpecialFloors((floors) => {
+      if (floors.some((floor) => floor.floor_number === floorNumber)) {
+        return floors.filter((floor) => floor.floor_number !== floorNumber)
+      }
+
+      const id = `special-${floorNumber}-${Date.now()}`
+      return [...floors, {
+        id,
+        floor_number: floorNumber,
+        units: [newUnit(`${id}-unit-1`, 'studio', 'S-{floor}A')],
+      }].sort((a, b) => a.floor_number - b.floor_number)
+    })
   }
 
   const updateSpecialFloor = (id: string, update: (floor: SpecialFloorDraft) => SpecialFloorDraft) => {
     setSpecialFloors((floors) => floors.map((floor) => floor.id === id ? update(floor) : floor))
   }
+
+  const allSellingPrices = [
+    ...typicalUnits.map((unit) => unit.price),
+    ...specialFloors.flatMap((floor) => floor.units.map((unit) => unit.price)),
+  ].filter((price) => Number.isFinite(price) && price >= 0)
+  const websiteStartingPrice = allSellingPrices.length > 0 ? Math.min(...allSellingPrices) : 0
+  const floorOptions = Array.from({ length: totalFloors + 1 }, (_, index) => index)
 
   const serializedTypicalUnits = typicalUnits.map(({ id: _id, ...unit }) => unit)
   const serializedSpecialFloors = specialFloors.map(({ id: _id, units, ...floor }) => ({
@@ -224,14 +264,62 @@ export function ProjectWizardForm() {
         </div>
       </Step>
 
-      <Step number={3} title="Building floors" description="Define the building height and current completed-floor count.">
+      <Step number={3} title="Building floors" description="Define the numbered floors. Ground Floor can be added separately as an optional special floor.">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Total floors" name="total_floors" type="number" min="1" defaultValue="10" required />
+          <div className="space-y-2">
+            <Label htmlFor="total_floors">Highest numbered floor</Label>
+            <Input
+              id="total_floors"
+              name="total_floors"
+              type="number"
+              min="1"
+              value={totalFloors}
+              onChange={(event) => {
+                const next = Math.max(1, Number(event.target.value))
+                setTotalFloors(next)
+                setTypicalFloorEnd((current) => Math.min(Math.max(current, 1), next))
+                setTypicalFloorStart((current) => Math.min(Math.max(current, 1), next))
+                setSpecialFloors((floors) => floors.filter((floor) => floor.floor_number <= next))
+              }}
+              required
+            />
+          </div>
           <Field label="Floors completed" name="floors_completed" type="number" min="0" defaultValue="0" required />
         </div>
       </Step>
 
-      <Step number={4} title="Typical-floor configuration" description="Build the exact mixed layout repeated on every typical floor. Add as many studio, 1BR, 2BR, 3BR, 4BR or commercial units as needed.">
+      <Step number={4} title="Typical-floor configuration" description="First choose which consecutive floors use the typical layout, then build the mixed unit layout repeated across that range.">
+        <div className="mb-6 grid gap-4 rounded-xl border bg-muted/30 p-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="typical_floor_start">Typical layout starts on floor</Label>
+            <Input
+              id="typical_floor_start"
+              name="typical_floor_start"
+              type="number"
+              min="1"
+              max={totalFloors}
+              value={typicalFloorStart}
+              onChange={(event) => setTypicalFloorStart(Number(event.target.value))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="typical_floor_end">Typical layout ends on floor</Label>
+            <Input
+              id="typical_floor_end"
+              name="typical_floor_end"
+              type="number"
+              min={typicalFloorStart}
+              max={totalFloors}
+              value={typicalFloorEnd}
+              onChange={(event) => setTypicalFloorEnd(Number(event.target.value))}
+              required
+            />
+          </div>
+          <p className="text-xs text-muted-foreground md:col-span-2">
+            Example: 2 to 10 repeats this layout on floors 2, 3, 4 and onward through floor 10. A selected special floor overrides the typical layout.
+          </p>
+        </div>
         <div className="space-y-4">
           {typicalUnits.map((unit, index) => (
             <UnitEditor
@@ -250,22 +338,42 @@ export function ProjectWizardForm() {
         </div>
       </Step>
 
-      <Step number={5} title="Special-floor configurations" description="Each special floor has its own independent layout and can contain a different mix and number of units.">
+      <Step number={5} title="Special-floor configurations" description="Optional: select Ground Floor or any nonconsecutive numbered floors. Every selected floor gets an independent layout.">
         <div className="space-y-5">
+          <div className="rounded-xl border bg-muted/30 p-4">
+            <Label>Select special floors</Label>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {floorOptions.map((floorNumber) => {
+                const selected = specialFloors.some((floor) => floor.floor_number === floorNumber)
+                return (
+                  <label
+                    key={floorNumber}
+                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${selected ? 'border-primary bg-primary/10' : 'bg-background'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleSpecialFloor(floorNumber)}
+                      className="size-4"
+                    />
+                    {floorNumber === 0 ? 'Ground Floor' : `Floor ${floorNumber}`}
+                  </label>
+                )
+              })}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Special floors are optional. You can select Ground, Floor 1 and Floor 10 together even though they are not consecutive.
+            </p>
+          </div>
+
           {specialFloors.map((floor) => (
             <div key={floor.id} className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <div className="w-48 space-y-2">
-                  <Label>Special floor number</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={floor.floor_number}
-                    onChange={(event) => updateSpecialFloor(floor.id, (item) => ({ ...item, floor_number: Number(event.target.value) }))}
-                    required
-                  />
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{floor.floor_number === 0 ? 'Ground Floor' : `Floor ${floor.floor_number}`}</p>
+                  <p className="text-xs text-muted-foreground">Independent special-floor layout</p>
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setSpecialFloors((floors) => floors.filter((item) => item.id !== floor.id))}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => toggleSpecialFloor(floor.floor_number)}>
                   <Trash2 className="size-4" aria-hidden="true" />
                   Remove special floor
                 </Button>
@@ -293,7 +401,14 @@ export function ProjectWizardForm() {
                   variant="outline"
                   onClick={() => updateSpecialFloor(floor.id, (item) => ({
                     ...item,
-                    units: [...item.units, newUnit(`${floor.id}-unit-${Date.now()}`, '1br')],
+                    units: [
+                      ...item.units,
+                      newUnit(
+                        `${floor.id}-unit-${Date.now()}`,
+                        '1br',
+                        `S-{floor}${unitLetter(item.units.length)}`,
+                      ),
+                    ],
                   }))}
                 >
                   <Plus className="size-4" aria-hidden="true" />
@@ -302,25 +417,31 @@ export function ProjectWizardForm() {
               </div>
             </div>
           ))}
-          <Button type="button" variant="outline" onClick={addSpecialFloor}>
-            <Plus className="size-4" aria-hidden="true" />
-            Add special floor
-          </Button>
-          {specialFloors.length === 0 ? <p className="text-sm text-muted-foreground">No special floors. Every floor currently uses the typical layout.</p> : null}
+          {specialFloors.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No special floors selected. All numbered floors must therefore be covered by the typical-floor range.
+            </p>
+          ) : null}
         </div>
       </Step>
 
       <Step number={6} title="Unit generation and validation" description="The database creates one inventory record per configured position on each floor and rejects duplicate unit numbers or invalid areas.">
         <div className="rounded-lg border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-          Typical units use floor and position numbers such as <code>5-01</code>. Special-floor units use an S prefix such as <code>10-S01</code>. Apartments remain independent inventory and cannot be split or combined.
+          Editable unit IDs use the floor placeholder. For example, <code>T-{'{floor}'}A</code> becomes <code>T-3A</code> on Floor 3, while <code>S-{'{floor}'}A</code> becomes <code>S-GA</code> on Ground Floor. IDs must remain unique within the project.
         </div>
       </Step>
 
-      <Step number={7} title="ETB pricing and VAT" description="Enter each unit position's ETB price above. Gross area includes corridors, lobby, common areas and the parking allocation, so parking is not priced separately.">
+      <Step number={7} title="ETB selling prices and VAT" description="Each unit row above contains its selling price. The public website displays the lowest entered selling price as the project's starting price.">
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="VAT rate (%)" name="vat_rate" type="number" min="0" step="0.01" defaultValue="15" required />
-          <div className="rounded-lg border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground">
-            Price history starts from the ETB values entered in the typical and special floor unit rows. Later price changes create new history records.
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm text-muted-foreground">Website starting selling price</p>
+            <p className="mt-2 font-serif text-2xl font-semibold">
+              {new Intl.NumberFormat('en-ET', { style: 'currency', currency: 'ETB', maximumFractionDigits: 0 }).format(websiteStartingPrice)}
+            </p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Calculated automatically from the lowest typical or special-floor unit selling price. Gross area already includes common areas and the parking allocation.
+            </p>
           </div>
         </div>
       </Step>
