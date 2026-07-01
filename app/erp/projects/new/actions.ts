@@ -91,19 +91,25 @@ function userIdFromToken(token: string) {
   }
 }
 
-async function deleteUploads(url: string, anonKey: string, accessToken: string, paths: string[]) {
-  await Promise.allSettled(paths.map((path) => fetch(`${url}/storage/v1/object/${mediaBucket}/${path}`, {
+async function deleteUploads(url: string, apiKey: string, token: string, paths: string[]) {
+  if (paths.length === 0) return
+  await fetch(`${url}/storage/v1/object/${mediaBucket}`, {
     method: 'DELETE',
-    headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}` },
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prefixes: paths }),
     cache: 'no-store',
-  })))
+  }).catch(() => undefined)
 }
 
 export async function createProjectAction(
   _state: ProjectWizardState,
   formData: FormData,
 ): Promise<ProjectWizardState> {
-  const { url, anonKey } = getSupabaseServerConfig()
+  const { url, anonKey, serviceRoleKey } = getSupabaseServerConfig()
   const accessToken = (await cookies()).get(sessionCookieName)?.value
   const userId = accessToken ? userIdFromToken(accessToken) : undefined
 
@@ -111,10 +117,12 @@ export async function createProjectAction(
     return { error: 'Your ERP session expired. Sign in again.' }
   }
 
+  const cleanupKey = serviceRoleKey ?? anonKey
+  const cleanupToken = serviceRoleKey ?? accessToken
   const uploadedMedia = parseJson<UploadedMedia[]>(formData, 'uploaded_media', [])
   const uploadedPaths = uploadedMedia.map((item) => item.storage_path).filter(Boolean)
   const fail = async (message: string) => {
-    await deleteUploads(url, anonKey, accessToken, uploadedPaths)
+    await deleteUploads(url, cleanupKey, cleanupToken, uploadedPaths)
     return { error: message }
   }
 
@@ -239,7 +247,7 @@ export async function createProjectAction(
     redirect(`/erp/projects/${result.project_id}`)
   } catch (error) {
     if (error && typeof error === 'object' && 'digest' in error) throw error
-    await deleteUploads(url, anonKey, accessToken, uploadedPaths)
+    await deleteUploads(url, cleanupKey, cleanupToken, uploadedPaths)
     return { error: error instanceof Error ? error.message : 'Unable to create the project.' }
   }
 }
