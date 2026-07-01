@@ -17,11 +17,11 @@ type UnitDraft = {
   id: string
   unit_id_pattern: string
   type: 'studio' | '1br' | '2br' | '3br' | '4br' | 'commercial'
-  bathrooms: number
-  balconies: number
-  net_area_sqm: number
-  gross_area_sqm: number
-  price: number
+  bathrooms: string
+  balconies: string
+  net_area_sqm: string
+  gross_area_sqm: string
+  price: string
   description: string
 }
 
@@ -53,11 +53,11 @@ function newUnit(
     id,
     unit_id_pattern: unitIdPattern,
     type,
-    bathrooms: type === 'studio' ? 1 : 2,
-    balconies: 0,
-    net_area_sqm: type === 'studio' ? 45 : 100,
-    gross_area_sqm: type === 'studio' ? 60 : 125,
-    price: 0,
+    bathrooms: type === 'studio' ? '1' : '2',
+    balconies: '0',
+    net_area_sqm: type === 'studio' ? '45' : '100',
+    gross_area_sqm: type === 'studio' ? '60' : '125',
+    price: '',
     description: '',
   }
 }
@@ -106,11 +106,13 @@ type UnitEditorProps = {
 }
 
 function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorProps) {
-  const updateNumber = (key: 'bathrooms' | 'balconies' | 'net_area_sqm' | 'gross_area_sqm' | 'price', value: string) => {
-    onChange({ ...unit, [key]: Number(value) })
+  const updateValue = (key: 'bathrooms' | 'balconies' | 'net_area_sqm' | 'gross_area_sqm', value: string) => {
+    onChange({ ...unit, [key]: value })
   }
 
-  const invalidArea = unit.gross_area_sqm < unit.net_area_sqm
+  const netArea = Number(unit.net_area_sqm)
+  const grossArea = Number(unit.gross_area_sqm)
+  const invalidArea = unit.net_area_sqm !== '' && unit.gross_area_sqm !== '' && grossArea < netArea
 
   return (
     <div className="rounded-xl border bg-background p-4">
@@ -144,17 +146,17 @@ function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorPr
         </div>
         <div className="space-y-2">
           <Label>Net area (m²)</Label>
-          <Input type="number" min="1" step="0.01" value={unit.net_area_sqm} onChange={(e) => updateNumber('net_area_sqm', e.target.value)} required />
+          <Input type="number" min="1" step="0.01" value={unit.net_area_sqm} onChange={(e) => updateValue('net_area_sqm', e.target.value)} required />
           <p className="text-xs text-muted-foreground">Area inside the unit itself.</p>
         </div>
         <div className="space-y-2">
           <Label>Gross area (m²)</Label>
           <Input
             type="number"
-            min={unit.net_area_sqm}
+            min={unit.net_area_sqm || '0'}
             step="0.01"
             value={unit.gross_area_sqm}
-            onChange={(e) => updateNumber('gross_area_sqm', e.target.value)}
+            onChange={(e) => updateValue('gross_area_sqm', e.target.value)}
             aria-invalid={invalidArea}
             required
           />
@@ -162,15 +164,25 @@ function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorPr
         </div>
         <div className="space-y-2">
           <Label>Bathrooms</Label>
-          <Input type="number" min="0" step="0.5" value={unit.bathrooms} onChange={(e) => updateNumber('bathrooms', e.target.value)} />
+          <Input type="number" min="0" step="0.5" value={unit.bathrooms} onChange={(e) => updateValue('bathrooms', e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label>Balconies</Label>
-          <Input type="number" min="0" value={unit.balconies} onChange={(e) => updateNumber('balconies', e.target.value)} />
+          <Input type="number" min="0" value={unit.balconies} onChange={(e) => updateValue('balconies', e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label>Total selling price incl. VAT (ETB)</Label>
-          <Input type="number" min="0" step="0.01" value={unit.price} onChange={(e) => updateNumber('price', e.target.value)} required />
+          <Input
+            type="text"
+            inputMode="numeric"
+            value={unit.price}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '')
+              onChange({ ...unit, price: digits === '' ? '' : Number(digits).toLocaleString('en-US') })
+            }}
+            placeholder="12,500,000"
+            required
+          />
         </div>
         <div className="space-y-2 md:col-span-3">
           <Label>Additional description</Label>
@@ -190,8 +202,8 @@ export function ProjectWizardForm() {
   const [state, formAction, isPending] = useActionState(createProjectAction, initialState)
   const [highestFloorInput, setHighestFloorInput] = useState('10')
   const totalFloors = Math.max(0, Number.parseInt(highestFloorInput, 10) || 0)
-  const [typicalFloorStart, setTypicalFloorStart] = useState(0)
-  const [typicalFloorEnd, setTypicalFloorEnd] = useState(10)
+  const [typicalFloorStart, setTypicalFloorStart] = useState<number | ''>(0)
+  const [typicalFloorEnd, setTypicalFloorEnd] = useState<number | ''>(10)
   const [newSpecialFloor, setNewSpecialFloor] = useState(0)
   const [typicalUnits, setTypicalUnits] = useState<UnitDraft[]>([
     newUnit('typical-1', 'studio', 'T-{floor}A'),
@@ -232,9 +244,9 @@ export function ProjectWizardForm() {
   }
 
   const allSellingPrices = [
-    ...typicalUnits.map((unit) => unit.price),
-    ...specialFloors.flatMap((floor) => floor.units.map((unit) => unit.price)),
-  ].filter((price) => Number.isFinite(price) && price >= 0)
+    ...typicalUnits.map((unit) => Number(unit.price.replaceAll(',', ''))),
+    ...specialFloors.flatMap((floor) => floor.units.map((unit) => Number(unit.price.replaceAll(',', '')))),
+  ].filter((price) => Number.isFinite(price) && price > 0)
   const websiteStartingPrice = allSellingPrices.length > 0 ? Math.min(...allSellingPrices) : 0
   const floorOptions = Array.from({ length: totalFloors + 1 }, (_, index) => index)
   const pricingRows = [
@@ -291,8 +303,8 @@ export function ProjectWizardForm() {
                 setHighestFloorInput(raw)
                 if (raw !== '') {
                   const next = Number.parseInt(raw, 10)
-                  setTypicalFloorEnd((current) => Math.min(Math.max(current, 0), next))
-                  setTypicalFloorStart((current) => Math.min(Math.max(current, 0), next))
+                  setTypicalFloorEnd((current) => current === '' ? '' : Math.min(Math.max(current, 0), next))
+                  setTypicalFloorStart((current) => current === '' ? '' : Math.min(Math.max(current, 0), next))
                   setSpecialFloors((floors) => floors.filter((floor) => floor.floor_number <= next))
                   setNewSpecialFloor((current) => Math.min(current, next))
                 }
@@ -317,7 +329,7 @@ export function ProjectWizardForm() {
               min="0"
               max={totalFloors}
               value={typicalFloorStart}
-              onChange={(event) => setTypicalFloorStart(Number(event.target.value))}
+              onChange={(event) => setTypicalFloorStart(event.target.value === '' ? '' : Number(event.target.value))}
               required
             />
           </div>
@@ -327,10 +339,10 @@ export function ProjectWizardForm() {
               id="typical_floor_end"
               name="typical_floor_end"
               type="number"
-              min={typicalFloorStart}
+              min={typicalFloorStart === '' ? 0 : typicalFloorStart}
               max={totalFloors}
               value={typicalFloorEnd}
-              onChange={(event) => setTypicalFloorEnd(Number(event.target.value))}
+              onChange={(event) => setTypicalFloorEnd(event.target.value === '' ? '' : Number(event.target.value))}
               required
             />
           </div>
@@ -440,7 +452,7 @@ export function ProjectWizardForm() {
           ))}
           {specialFloors.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No special floors added. Every floor must therefore be covered by the typical-floor range.
+              No special floors added. Floors 1 through the highest floor must be covered by the typical range. Ground Floor may be left without units for parking or a lobby.
             </p>
           ) : null}
         </div>
@@ -474,11 +486,13 @@ export function ProjectWizardForm() {
                     <td className="px-4 py-3">{unitLabels[unit.type]}</td>
                     <td className="px-4 py-3">{unit.gross_area_sqm} m²</td>
                     <td className="px-4 py-3">
-                      {new Intl.NumberFormat('en-ET', { style: 'currency', currency: 'ETB', maximumFractionDigits: 0 }).format(unit.price)}
+                      {new Intl.NumberFormat('en-ET', { style: 'currency', currency: 'ETB', maximumFractionDigits: 0 }).format(Number(unit.price.replaceAll(',', '')) || 0)}
                     </td>
                     <td className="px-4 py-3">
                       {new Intl.NumberFormat('en-ET', { style: 'currency', currency: 'ETB', maximumFractionDigits: 0 }).format(
-                        unit.gross_area_sqm > 0 ? unit.price / unit.gross_area_sqm : 0,
+                        Number(unit.gross_area_sqm) > 0
+                          ? (Number(unit.price.replaceAll(',', '')) || 0) / Number(unit.gross_area_sqm)
+                          : 0,
                       )}
                     </td>
                   </tr>
@@ -510,9 +524,20 @@ export function ProjectWizardForm() {
             <Label htmlFor="description">Full description</Label>
             <Textarea id="description" name="description" className="min-h-32" placeholder="Describe the project, its design and location." />
           </div>
-          <Field label="Hero image URL" name="media_url" type="url" placeholder="https://..." />
-          <Field label="Media title" name="media_title" placeholder="Main exterior rendering" />
-          <Field label="Image alternative text" name="media_alt_text" placeholder="Exterior view of..." />
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="project_images">Project images</Label>
+            <Input
+              id="project_images"
+              name="project_images"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              required
+            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              Upload 3 or 4 images from your computer. Accepted formats: JPG, PNG and WebP; maximum 10 MB per image. The first image is used as the main project image.
+            </p>
+          </div>
         </div>
       </Step>
 
@@ -555,7 +580,7 @@ export function ProjectWizardForm() {
           <span>
             <span className="block text-sm font-medium">Publish after creation</span>
             <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-              Requires a hero image URL. The website receives only the approved publication-safe snapshot.
+              Requires 3 or 4 uploaded project images. The website receives only the approved publication-safe snapshot.
             </span>
           </span>
         </label>
