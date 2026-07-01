@@ -11,6 +11,7 @@ import {
   ImageIcon,
   Layers3,
   Megaphone,
+  Pencil,
   Users,
 } from 'lucide-react'
 
@@ -49,6 +50,26 @@ function number(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function bedroomLabel(value: unknown, category?: unknown) {
+  if (category === 'commercial') return 'Commercial space'
+  const bedrooms = Number(value)
+  if (!Number.isFinite(bedrooms)) return 'Unit type'
+  if (bedrooms === 0) return 'Studio'
+  return `${bedrooms}BR`
+}
+
+function areaRange(values: number[]) {
+  const valid = values.filter((value) => Number.isFinite(value) && value > 0)
+  if (valid.length === 0) return '—'
+  const min = Math.min(...valid)
+  const max = Math.max(...valid)
+  return min === max ? `${min} m²` : `${min}–${max} m²`
+}
+
+function statusCount(units: Array<Record<string, unknown>>, status: string) {
+  return units.filter((unit) => text(unit.status, '').toLowerCase() === status).length
+}
+
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const { projectId } = await params
   const workspace = await getErpProjectWorkspace(projectId)
@@ -63,6 +84,12 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   }, {})
   const currentPrices = prices.filter((price) => price.is_current === true)
   const publicationStatus = text(publication?.status, 'draft')
+  const availableUnits = statusCount(units, 'available')
+  const reservedUnits = statusCount(units, 'reserved')
+  const contractedUnits = statusCount(units, 'contracted')
+  const soldUnits = statusCount(units, 'sold')
+  const handedOverUnits = statusCount(units, 'handed_over')
+  const unitTypeById = new Map(unitTypes.map((unitType) => [text(unitType.id, ''), unitType]))
 
   return (
     <div className="space-y-6">
@@ -80,7 +107,13 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             {text(project.code)} · {[project.subcity, project.city].filter(Boolean).join(', ')} · {formatPhase(project.phase)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/erp/projects/${projectId}/edit`}>
+              <Pencil className="size-4" aria-hidden="true" />
+              Edit project
+            </Link>
+          </Button>
           <Badge variant="outline">{formatPhase(project.phase)}</Badge>
           <Badge variant={publicationStatus === 'published' ? 'default' : 'secondary'} className="capitalize">
             {publicationStatus.replace('_', ' ')}
@@ -99,27 +132,30 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
       <section id="overview" className="scroll-mt-24 space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card>
-            <CardHeader><CardDescription>Floors</CardDescription><CardTitle className="text-3xl">{floors.length}</CardTitle></CardHeader>
+            <CardHeader><CardDescription>Available units</CardDescription><CardTitle className="text-3xl">{availableUnits}</CardTitle></CardHeader>
           </Card>
           <Card>
-            <CardHeader><CardDescription>Generated units</CardDescription><CardTitle className="text-3xl">{units.length}</CardTitle></CardHeader>
+            <CardHeader><CardDescription>Reserved / contracted</CardDescription><CardTitle className="text-3xl">{reservedUnits + contractedUnits}</CardTitle></CardHeader>
           </Card>
           <Card>
-            <CardHeader><CardDescription>Unit types</CardDescription><CardTitle className="text-3xl">{unitTypes.length}</CardTitle></CardHeader>
+            <CardHeader><CardDescription>Sold units</CardDescription><CardTitle className="text-3xl">{soldUnits}</CardTitle></CardHeader>
           </Card>
           <Card>
-            <CardHeader><CardDescription>Starting price</CardDescription><CardTitle className="text-xl">
-              {formatEtb(currentPrices.length ? Math.min(...currentPrices.map((price) => number(price.amount))) : null)}
-            </CardTitle></CardHeader>
+            <CardHeader><CardDescription>Handed over</CardDescription><CardTitle className="text-3xl">{handedOverUnits}</CardTitle></CardHeader>
           </Card>
         </div>
         <Card>
-          <CardHeader><CardTitle>Overview</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Overview</CardTitle>
+            <CardDescription>Sales-ready project summary. Contractual status changes will be controlled by Sales CRM later.</CardDescription>
+          </CardHeader>
           <CardContent className="grid gap-5 text-sm md:grid-cols-2">
             <div><p className="text-muted-foreground">Address</p><p className="mt-1 font-medium">{text(project.address)}</p></div>
-            <div><p className="text-muted-foreground">Responsible team member</p><p className="mt-1 font-medium">{text(project.responsible_user_id, 'Not assigned')}</p></div>
-            <div><p className="text-muted-foreground">VAT</p><p className="mt-1 font-medium">{number(project.vat_rate)}%</p></div>
-            <div><p className="text-muted-foreground">Parking price</p><p className="mt-1 font-medium">{formatEtb(number(project.parking_price))}</p></div>
+            <div><p className="text-muted-foreground">Publication</p><p className="mt-1 font-medium capitalize">{publicationStatus.replace('_', ' ')}</p></div>
+            <div><p className="text-muted-foreground">Construction phase</p><p className="mt-1 font-medium">{formatPhase(project.phase)}</p></div>
+            <div><p className="text-muted-foreground">Floor progress</p><p className="mt-1 font-medium">{number(project.floors_completed)} of {number(project.total_floors)} floors completed</p></div>
+            <div><p className="text-muted-foreground">Unit types</p><p className="mt-1 font-medium">{unitTypes.length}</p></div>
+            <div><p className="text-muted-foreground">Starting price</p><p className="mt-1 font-medium">{formatEtb(currentPrices.length ? Math.min(...currentPrices.map((price) => number(price.amount))) : null)}</p></div>
             <div className="md:col-span-2"><p className="text-muted-foreground">Description</p><p className="mt-1 leading-6">{text(project.description, 'No project description yet.')}</p></div>
           </CardContent>
         </Card>
@@ -132,7 +168,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             <CardDescription>One project represents this single building. No development or site grouping is used.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Total floors</p><p className="mt-2 text-2xl font-semibold">{number(project.total_floors)}</p></div>
+            <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Highest floor</p><p className="mt-2 text-2xl font-semibold">{number(project.total_floors)}</p></div>
             <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Typical floors</p><p className="mt-2 text-2xl font-semibold">{floors.filter((floor) => floor.floor_kind === 'typical').length}</p></div>
             <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Special floors</p><p className="mt-2 text-2xl font-semibold">{floors.filter((floor) => floor.floor_kind === 'special').length}</p></div>
           </CardContent>
@@ -154,18 +190,21 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             </div>
             {units.length > 0 ? (
               <Table>
-                <TableHeader><TableRow><TableHead>Unit</TableHead><TableHead>Category</TableHead><TableHead>Net area</TableHead><TableHead>Gross area</TableHead><TableHead>Description</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Unit</TableHead><TableHead>Type</TableHead><TableHead>Net area</TableHead><TableHead>Gross area</TableHead><TableHead>Description</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {units.slice(0, 20).map((unit) => (
-                    <TableRow key={text(unit.id)}>
-                      <TableCell className="font-medium">{text(unit.unit_number)}</TableCell>
-                      <TableCell className="capitalize">{text(unit.category)}</TableCell>
-                      <TableCell>{number(unit.net_area_sqm)} m²</TableCell>
-                      <TableCell>{number(unit.gross_area_sqm)} m²</TableCell>
-                      <TableCell className="max-w-64 text-muted-foreground">{text(unit.unit_description)}</TableCell>
-                      <TableCell><Badge variant="outline" className="capitalize">{text(unit.status).replace('_', ' ')}</Badge></TableCell>
-                    </TableRow>
-                  ))}
+                  {units.slice(0, 20).map((unit) => {
+                    const unitType = unitTypeById.get(text(unit.unit_type_id, ''))
+                    return (
+                      <TableRow key={text(unit.id)}>
+                        <TableCell className="font-medium">{text(unit.unit_number)}</TableCell>
+                        <TableCell>{bedroomLabel(unit.bedrooms ?? unitType?.bedrooms, unit.category)}</TableCell>
+                        <TableCell>{number(unit.net_area_sqm)} m²</TableCell>
+                        <TableCell>{number(unit.gross_area_sqm)} m²</TableCell>
+                        <TableCell className="max-w-64 text-muted-foreground">{text(unit.unit_description)}</TableCell>
+                        <TableCell><Badge variant="outline" className="capitalize">{text(unit.status).replace('_', ' ')}</Badge></TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             ) : null}
@@ -181,13 +220,21 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              {currentPrices.map((price) => (
-                <div key={text(price.id)} className="rounded-lg border p-4">
-                  <Badge variant="outline" className="capitalize">{text(price.scope).replace('_', ' ')}</Badge>
-                  <p className="mt-3 text-xl font-semibold">{formatEtb(number(price.amount))}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">VAT {number(price.vat_rate)}% · Parking {formatEtb(number(price.parking_price))}</p>
-                </div>
-              ))}
+              {currentPrices.map((price) => {
+                const joinedUnitType = Array.isArray(price.unit_types) ? price.unit_types[0] : price.unit_types
+                const unitType = (joinedUnitType ?? unitTypeById.get(text(price.unit_type_id, '')) ?? {}) as Record<string, unknown>
+                const matchingUnits = units.filter((unit) => text(unit.unit_type_id, '') === text(price.unit_type_id, ''))
+                return (
+                  <div key={text(price.id)} className="rounded-lg border p-4">
+                    <Badge variant="outline" className="capitalize">{text(unitType.name, text(price.scope).replace('_', ' '))}</Badge>
+                    <p className="mt-3 text-xl font-semibold">{formatEtb(number(price.amount))}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {bedroomLabel(unitType.bedrooms, unitType.category)} · Net {areaRange(matchingUnits.map((unit) => number(unit.net_area_sqm)))} · Gross {areaRange(matchingUnits.map((unit) => number(unit.gross_area_sqm)))}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">Selling price includes VAT. Gross area includes common areas and parking allocation.</p>
+                  </div>
+                )
+              })}
               {currentPrices.length === 0 ? <p className="text-sm text-muted-foreground">No current prices entered.</p> : null}
             </div>
           </CardContent>
@@ -198,17 +245,17 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><ImageIcon className="size-5" />Marketing and Media</CardTitle>
-            <CardDescription>Only approved, public items can flow to the website.</CardDescription>
+            <CardDescription>Only approved, public items can flow to the website. Use Edit project to replace building, location or unit images.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              {media.map((item) => (
+              {media.filter((item) => item.is_public !== false).map((item) => (
                 <div key={text(item.id)} className="rounded-lg border p-4">
                   <p className="font-medium">{text(item.title, 'Untitled media')}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{text(item.media_type)} · {item.is_approved ? 'Approved' : 'Internal'}</p>
+                  <p className="mt-1 text-xs text-muted-foreground capitalize">{text(item.purpose, text(item.media_type))} · {item.is_approved ? 'Approved' : 'Internal'}</p>
                 </div>
               ))}
-              {media.length === 0 ? <p className="text-sm text-muted-foreground">No media uploaded.</p> : null}
+              {media.filter((item) => item.is_public !== false).length === 0 ? <p className="text-sm text-muted-foreground">No media uploaded.</p> : null}
             </div>
           </CardContent>
         </Card>
@@ -272,19 +319,24 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><History className="size-5" />Audit History</CardTitle>
-            <CardDescription>Project, price, permission, progress and publication changes.</CardDescription>
+            <CardDescription>Collapsed by default so the workspace stays focused.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {audit.map((entry) => (
-              <div key={text(entry.id)} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <ClipboardCheck className="size-4 text-muted-foreground" aria-hidden="true" />
-                  <span className="capitalize">{text(entry.action)} {text(entry.entity_type).replaceAll('_', ' ')}</span>
-                </div>
-                <time className="text-xs text-muted-foreground">{new Date(text(entry.changed_at)).toLocaleString('en-ET')}</time>
+          <CardContent>
+            <details className="rounded-lg border bg-background p-4">
+              <summary className="cursor-pointer text-sm font-medium">Show edit history and system log</summary>
+              <div className="mt-4 space-y-3">
+                {audit.map((entry) => (
+                  <div key={text(entry.id)} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm">
+                    <div className="flex items-center gap-3">
+                      <ClipboardCheck className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <span className="capitalize">{text(entry.action)} {text(entry.entity_type).replaceAll('_', ' ')}</span>
+                    </div>
+                    <time className="text-xs text-muted-foreground">{new Date(text(entry.changed_at)).toLocaleString('en-ET')}</time>
+                  </div>
+                ))}
+                {audit.length === 0 ? <p className="text-sm text-muted-foreground">No auditable changes recorded yet.</p> : null}
               </div>
-            ))}
-            {audit.length === 0 ? <p className="text-sm text-muted-foreground">No auditable changes recorded yet.</p> : null}
+            </details>
           </CardContent>
         </Card>
       </section>
