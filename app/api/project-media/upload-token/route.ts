@@ -85,7 +85,9 @@ export async function POST(request: Request) {
     uploads.push({
       client_key: file.client_key,
       storage_path: path,
-      signed_url: new URL(signed.url, `${url}/storage/v1/`).toString(),
+      signed_url: signed.url.startsWith('http')
+        ? signed.url
+        : `${url}/storage/v1${signed.url.startsWith('/') ? signed.url : `/${signed.url}`}`,
     })
   }
 
