@@ -6,7 +6,6 @@ import {
   Building2,
   CircleDollarSign,
   ClipboardCheck,
-  DoorOpen,
   History,
   ImageIcon,
   Layers3,
