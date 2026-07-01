@@ -7,14 +7,13 @@ import { getSupabaseServerConfig } from '@/lib/supabase/server'
 
 const sessionCookieName = 'alet-erp-session'
 const mediaBucket = 'project-media'
-const maxImageBytes = 10 * 1024 * 1024
-const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 export type ProjectWizardState = {
   error?: string
 }
 
 type UnitConfiguration = {
+  client_id: string
   unit_id_pattern: string
   type: string
   bathrooms: string | number
@@ -28,6 +27,15 @@ type UnitConfiguration = {
 type SpecialFloorConfiguration = {
   floor_number: number
   units: UnitConfiguration[]
+}
+
+type UploadedMedia = {
+  storage_path: string
+  title: string
+  alt_text: string
+  purpose: 'building' | 'location' | 'unit'
+  unit_client_id?: string
+  unit_type_code?: string
 }
 
 function stringValue(formData: FormData, key: string) {
@@ -65,6 +73,7 @@ function normalizeUnit(unit: UnitConfiguration) {
 
 function validUnit(unit: ReturnType<typeof normalizeUnit>) {
   return Boolean(
+    unit.client_id &&
     unit.unit_id_pattern?.includes('{floor}') &&
     unit.type &&
     unit.net_area_sqm > 0 &&
@@ -80,10 +89,6 @@ function userIdFromToken(token: string) {
   } catch {
     return undefined
   }
-}
-
-function safeFileName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/-+/g, '-').slice(-120)
 }
 
 async function deleteUploads(url: string, anonKey: string, accessToken: string, paths: string[]) {
@@ -106,16 +111,11 @@ export async function createProjectAction(
     return { error: 'Your ERP session expired. Sign in again.' }
   }
 
-  const imageFiles = formData
-    .getAll('project_images')
-    .filter((value): value is File => value instanceof File && value.size > 0)
-
-  if (imageFiles.length < 3 || imageFiles.length > 4) {
-    return { error: 'Upload exactly 3 or 4 project images.' }
-  }
-
-  if (imageFiles.some((file) => !allowedImageTypes.has(file.type) || file.size > maxImageBytes)) {
-    return { error: 'Images must be JPG, PNG or WebP and no larger than 10 MB each.' }
+  const uploadedMedia = parseJson<UploadedMedia[]>(formData, 'uploaded_media', [])
+  const uploadedPaths = uploadedMedia.map((item) => item.storage_path).filter(Boolean)
+  const fail = async (message: string) => {
+    await deleteUploads(url, anonKey, accessToken, uploadedPaths)
+    return { error: message }
   }
 
   const totalFloors = Math.max(0, numberValue(formData, 'total_floors', 0))
@@ -127,17 +127,36 @@ export async function createProjectAction(
     'special_floor_configurations',
     [],
   ).map((floor) => ({ ...floor, units: floor.units.map(normalizeUnit) }))
+  const allUnits = [
+    ...typicalUnits,
+    ...specialFloorConfigurations.flatMap((floor) => floor.units),
+  ]
+
+  if (uploadedMedia.some((item) => !item.storage_path.startsWith(`${userId}/`))) {
+    return fail('One or more uploaded images are invalid. Please select the images again.')
+  }
+  if (uploadedMedia.filter((item) => item.purpose === 'building').length < 3) {
+    return fail('Upload at least three building images.')
+  }
+  if (uploadedMedia.filter((item) => item.purpose === 'location').length < 1) {
+    return fail('Upload a location image.')
+  }
+  if (allUnits.some((unit) => !uploadedMedia.some(
+    (item) => item.purpose === 'unit' && item.unit_client_id === unit.client_id,
+  ))) {
+    return fail('Upload one configuration image for every typical and special-floor unit.')
+  }
 
   if (
     typicalFloorStart < 0 ||
     typicalFloorEnd < typicalFloorStart ||
     typicalFloorEnd > totalFloors
   ) {
-    return { error: 'Choose a valid typical-floor range between Ground Floor and the highest floor.' }
+    return fail('Choose a valid typical-floor range between Ground Floor and the highest floor.')
   }
 
   if (typicalUnits.length === 0 || typicalUnits.some((unit) => !validUnit(unit))) {
-    return { error: 'Add at least one valid typical-floor unit. Unit IDs must include {floor}, and gross area must be at least the net area.' }
+    return fail('Add at least one valid typical-floor unit. Unit IDs must include {floor}, and gross area must be at least the net area.')
   }
 
   const specialFloorNumbers = new Set<number>()
@@ -150,83 +169,56 @@ export async function createProjectAction(
       floor.units.length === 0 ||
       floor.units.some((unit) => !validUnit(unit))
     ) {
-      return { error: 'Each special floor needs a unique valid floor number and at least one valid unit.' }
+      return fail('Each special floor needs a unique valid floor number and at least one valid unit.')
     }
     specialFloorNumbers.add(Number(floor.floor_number))
   }
 
   for (let floor = 1; floor <= totalFloors; floor += 1) {
     if ((floor < typicalFloorStart || floor > typicalFloorEnd) && !specialFloorNumbers.has(floor)) {
-      return { error: `Floor ${floor} has no layout. Include it in the typical range or add it as a special floor.` }
+      return fail(`Floor ${floor} has no layout. Include it in the typical range or add it as a special floor.`)
     }
   }
 
-  const uploadedPaths: string[] = []
+  const projectName = stringValue(formData, 'name')
+  const payload = {
+    name: projectName,
+    code: stringValue(formData, 'code'),
+    slug: stringValue(formData, 'slug'),
+    marketing_title: stringValue(formData, 'marketing_title'),
+    short_description: stringValue(formData, 'short_description'),
+    description: stringValue(formData, 'description'),
+    address: stringValue(formData, 'address'),
+    city: stringValue(formData, 'city') || 'Addis Ababa',
+    subcity: stringValue(formData, 'subcity'),
+    latitude: stringValue(formData, 'latitude'),
+    longitude: stringValue(formData, 'longitude'),
+    google_maps_url: stringValue(formData, 'google_maps_url'),
+    total_floors: totalFloors,
+    typical_floor_start: typicalFloorStart,
+    typical_floor_end: typicalFloorEnd,
+    floors_completed: numberValue(formData, 'floors_completed'),
+    typical_units: typicalUnits,
+    special_floor_configurations: specialFloorConfigurations,
+    amenities: stringValue(formData, 'amenities')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+    payment_plan_summary: stringValue(formData, 'payment_plan_summary'),
+    offers: stringValue(formData, 'offers'),
+    media_files: uploadedMedia,
+    phase: stringValue(formData, 'phase') || 'planning_design',
+    progress_percent: numberValue(formData, 'progress_percent'),
+    progress_description: stringValue(formData, 'progress_description'),
+    expected_completion_date: stringValue(formData, 'expected_completion_date'),
+    publish: formData.get('publish') === 'on',
+  }
+
+  if (!payload.name || !payload.code) {
+    return fail('Project name and code are required.')
+  }
 
   try {
-    for (const file of imageFiles) {
-      const path = `${userId}/${crypto.randomUUID()}-${safeFileName(file.name)}`
-      const uploadResponse = await fetch(`${url}/storage/v1/object/${mediaBucket}/${path}`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': file.type,
-          'x-upsert': 'false',
-        },
-        body: file,
-        cache: 'no-store',
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Unable to upload ${file.name}: ${await uploadResponse.text()}`)
-      }
-      uploadedPaths.push(path)
-    }
-
-    const projectName = stringValue(formData, 'name')
-    const payload = {
-      name: projectName,
-      code: stringValue(formData, 'code'),
-      slug: stringValue(formData, 'slug'),
-      marketing_title: stringValue(formData, 'marketing_title'),
-      short_description: stringValue(formData, 'short_description'),
-      description: stringValue(formData, 'description'),
-      address: stringValue(formData, 'address'),
-      city: stringValue(formData, 'city') || 'Addis Ababa',
-      subcity: stringValue(formData, 'subcity'),
-      latitude: stringValue(formData, 'latitude'),
-      longitude: stringValue(formData, 'longitude'),
-      google_maps_url: stringValue(formData, 'google_maps_url'),
-      total_floors: totalFloors,
-      typical_floor_start: typicalFloorStart,
-      typical_floor_end: typicalFloorEnd,
-      floors_completed: numberValue(formData, 'floors_completed'),
-      typical_units: typicalUnits,
-      special_floor_configurations: specialFloorConfigurations,
-      amenities: stringValue(formData, 'amenities')
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      payment_plan_summary: stringValue(formData, 'payment_plan_summary'),
-      offers: stringValue(formData, 'offers'),
-      media_files: uploadedPaths.map((storagePath, index) => ({
-        storage_path: storagePath,
-        title: imageFiles[index].name,
-        alt_text: `${projectName} project image ${index + 1}`,
-      })),
-      phase: stringValue(formData, 'phase') || 'planning_design',
-      progress_percent: numberValue(formData, 'progress_percent'),
-      progress_description: stringValue(formData, 'progress_description'),
-      expected_completion_date: stringValue(formData, 'expected_completion_date'),
-      publish: formData.get('publish') === 'on',
-    }
-
-    if (!payload.name || !payload.code) {
-      await deleteUploads(url, anonKey, accessToken, uploadedPaths)
-      return { error: 'Project name and code are required.' }
-    }
-
     const response = await fetch(`${url}/rest/v1/rpc/create_project_from_wizard`, {
       method: 'POST',
       headers: {
@@ -241,8 +233,7 @@ export async function createProjectAction(
     const result = (await response.json()) as { project_id?: string; message?: string }
 
     if (!response.ok || !result.project_id) {
-      await deleteUploads(url, anonKey, accessToken, uploadedPaths)
-      return { error: result.message ?? 'Unable to create the project.' }
+      return fail(result.message ?? 'Unable to create the project.')
     }
 
     redirect(`/erp/projects/${result.project_id}`)
