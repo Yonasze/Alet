@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement } from 'react'
+import { cloneElement, isValidElement, type HTMLAttributes } from 'react'
 import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
 
@@ -60,7 +60,7 @@ function Button({
       ...props,
       'data-slot': 'button',
       className: cn(classes, children.props.className),
-    } as React.HTMLAttributes<HTMLElement>)
+    } as HTMLAttributes<HTMLElement>)
   }
 
   return (
