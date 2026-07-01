@@ -76,6 +76,9 @@ export type PublicUnitType = {
 
 export type PublicMedia = {
   project_slug: string
+  media_id: string
+  purpose: 'building' | 'location' | 'unit'
+  unit_type_code: string | null
   media_type: string
   title: string | null
   alt_text: string | null
