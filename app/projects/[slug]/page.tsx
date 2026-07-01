@@ -22,6 +22,17 @@ type ProjectPageProps = {
   params: Promise<{ slug: string }>
 }
 
+function bedroomSummary(bedrooms: number | null, category: string) {
+  if (category === 'commercial') return 'Commercial space'
+  if (bedrooms === null) return 'Unit type'
+  if (bedrooms === 0) return 'Studio'
+  return `${bedrooms}BR apartment`
+}
+
+function areaSummary(minimum: number, maximum: number) {
+  return minimum === maximum ? `${minimum} m²` : `${minimum}–${maximum} m²`
+}
+
 export default async function PublicProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params
   const data = await getPublicProject(slug)
@@ -164,20 +175,18 @@ export default async function PublicProjectPage({ params }: ProjectPageProps) {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <p className="flex items-center gap-2">
-                    <Ruler className="size-4" aria-hidden="true" />
-                    Net area: {unitType.minimum_net_area_sqm === unitType.maximum_net_area_sqm
-                      ? `${unitType.minimum_net_area_sqm} m²`
-                      : `${unitType.minimum_net_area_sqm}–${unitType.maximum_net_area_sqm} m²`}
+                  <p className="font-medium text-[#173647]">
+                    {bedroomSummary(unitType.bedrooms, unitType.category)} · Net {areaSummary(unitType.minimum_net_area_sqm, unitType.maximum_net_area_sqm)} · Gross {areaSummary(unitType.minimum_gross_area_sqm, unitType.maximum_gross_area_sqm)}
                   </p>
                   <p className="flex items-center gap-2">
                     <Ruler className="size-4" aria-hidden="true" />
-                    Gross area: {unitType.minimum_gross_area_sqm === unitType.maximum_gross_area_sqm
-                      ? `${unitType.minimum_gross_area_sqm} m²`
-                      : `${unitType.minimum_gross_area_sqm}–${unitType.maximum_gross_area_sqm} m²`}
+                    Net area: {areaSummary(unitType.minimum_net_area_sqm, unitType.maximum_net_area_sqm)}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Ruler className="size-4" aria-hidden="true" />
+                    Gross area: {areaSummary(unitType.minimum_gross_area_sqm, unitType.maximum_gross_area_sqm)}
                   </p>
                   <p className="text-xs">Gross area includes common areas and the parking allocation.</p>
-                  {unitType.bedrooms !== null ? <p>{unitType.bedrooms === 0 ? 'Studio' : `${unitType.bedrooms} bedrooms`}</p> : null}
                 </CardContent>
               </Card>
               )
