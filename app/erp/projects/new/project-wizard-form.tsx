@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { type FormEvent, useActionState, useState, useTransition } from 'react'
 import { CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,16 @@ const unitLabels: Record<UnitDraft['type'], string> = {
 
 function unitLetter(index: number) {
   return String.fromCharCode(65 + (index % 26))
+}
+
+function formatEtbInput(value: string) {
+  const cleaned = value.replaceAll(',', '').replace(/[^\d.]/g, '')
+  const dotIndex = cleaned.indexOf('.')
+  const hasDecimal = dotIndex >= 0
+  const wholeRaw = (hasDecimal ? cleaned.slice(0, dotIndex) : cleaned) || (hasDecimal ? '0' : '')
+  const whole = wholeRaw.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const fraction = hasDecimal ? cleaned.slice(dotIndex + 1).replaceAll('.', '').slice(0, 2) : ''
+  return whole + (hasDecimal ? `.${fraction}` : '')
 }
 
 function newUnit(
@@ -174,15 +184,23 @@ function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorPr
           <Label>Total selling price incl. VAT (ETB)</Label>
           <Input
             type="text"
-            inputMode="numeric"
+            inputMode="decimal"
             value={unit.price}
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, '')
-              onChange({ ...unit, price: digits === '' ? '' : Number(digits).toLocaleString('en-US') })
-            }}
-            placeholder="12,500,000"
+            onChange={(e) => onChange({ ...unit, price: formatEtbInput(e.target.value) })}
+            placeholder="15,847,727.27"
             required
           />
+        </div>
+        <div className="space-y-2 md:col-span-3">
+          <Label htmlFor={`unit_image_${unit.id}`}>Unit configuration image</Label>
+          <Input
+            id={`unit_image_${unit.id}`}
+            name={`unit_image_${unit.id}`}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            required
+          />
+          <p className="text-xs text-muted-foreground">Upload one floor-plan, rendering or interior image for this unit configuration.</p>
         </div>
         <div className="space-y-2 md:col-span-3">
           <Label>Additional description</Label>
@@ -200,6 +218,9 @@ function UnitEditor({ unit, index, canRemove, onChange, onRemove }: UnitEditorPr
 
 export function ProjectWizardForm() {
   const [state, formAction, isPending] = useActionState(createProjectAction, initialState)
+  const [, startTransition] = useTransition()
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string>()
   const [highestFloorInput, setHighestFloorInput] = useState('10')
   const totalFloors = Math.max(0, Number.parseInt(highestFloorInput, 10) || 0)
   const [typicalFloorStart, setTypicalFloorStart] = useState<number | ''>(0)
@@ -257,14 +278,144 @@ export function ProjectWizardForm() {
     }))),
   ]
 
-  const serializedTypicalUnits = typicalUnits.map(({ id: _id, ...unit }) => unit)
+  const serializedTypicalUnits = typicalUnits.map(({ id, ...unit }) => ({ client_id: id, ...unit }))
   const serializedSpecialFloors = specialFloors.map(({ id: _id, units, ...floor }) => ({
     ...floor,
-    units: units.map(({ id: _unitId, ...unit }) => unit),
+    units: units.map(({ id, ...unit }) => ({ client_id: id, ...unit })),
   }))
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    if (!form.reportValidity()) return
+
+    const formData = new FormData(form)
+    const descriptors: Array<{
+      client_key: string
+      input_name: string
+      file: File
+      purpose: 'building' | 'location' | 'unit'
+      unit_client_id?: string
+      unit_type_code?: string
+      title: string
+      alt_text: string
+    }> = []
+
+    const addFile = (
+      inputName: string,
+      purpose: 'building' | 'location' | 'unit',
+      required: boolean,
+      metadata: { unit_client_id?: string; unit_type_code?: string; title: string; alt_text: string },
+    ) => {
+      const value = formData.get(inputName)
+      const file = value instanceof File && value.size > 0 ? value : null
+      if (!file && required) throw new Error(`Choose ${metadata.title.toLowerCase()}.`)
+      if (!file) return
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+        throw new Error(`${file.name} must be JPG, PNG or WebP and no larger than 10 MB.`)
+      }
+      descriptors.push({
+        client_key: inputName,
+        input_name: inputName,
+        file,
+        purpose,
+        ...metadata,
+      })
+    }
+
+    setUploadError(undefined)
+    setIsUploading(true)
+
+    try {
+      for (let index = 1; index <= 4; index += 1) {
+        addFile(
+          `building_image_${index}`,
+          'building',
+          index <= 3,
+          { title: `Building image ${index}`, alt_text: `Project building view ${index}` },
+        )
+      }
+      addFile('location_image', 'location', true, {
+        title: 'Location image',
+        alt_text: 'Project location and surrounding area',
+      })
+      for (const unit of typicalUnits) {
+        addFile(`unit_image_${unit.id}`, 'unit', true, {
+          unit_client_id: unit.id,
+          unit_type_code: unit.type,
+          title: `${unitLabels[unit.type]} configuration`,
+          alt_text: `${unitLabels[unit.type]} unit configuration`,
+        })
+      }
+      for (const floor of specialFloors) {
+        for (const unit of floor.units) {
+          addFile(`unit_image_${unit.id}`, 'unit', true, {
+            unit_client_id: unit.id,
+            unit_type_code: unit.type,
+            title: `${unitLabels[unit.type]} special-floor configuration`,
+            alt_text: `${unitLabels[unit.type]} unit configuration on floor ${floor.floor_number}`,
+          })
+        }
+      }
+
+      const tokenResponse = await fetch('/api/project-media/upload-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: descriptors.map((item) => ({
+            client_key: item.client_key,
+            file_name: item.file.name,
+            content_type: item.file.type,
+            size: item.file.size,
+          })),
+        }),
+      })
+      const tokenResult = await tokenResponse.json() as {
+        message?: string
+        uploads?: Array<{ client_key: string; storage_path: string; signed_url: string }>
+      }
+      if (!tokenResponse.ok || !tokenResult.uploads) {
+        throw new Error(tokenResult.message ?? 'Unable to prepare the image uploads.')
+      }
+
+      const uploadByKey = new Map(tokenResult.uploads.map((item) => [item.client_key, item]))
+      const uploadedMedia = []
+      for (const descriptor of descriptors) {
+        const upload = uploadByKey.get(descriptor.client_key)
+        if (!upload) throw new Error(`Upload preparation failed for ${descriptor.file.name}.`)
+        const uploadBody = new FormData()
+        uploadBody.append('cacheControl', '3600')
+        uploadBody.append('', descriptor.file)
+        const uploadResponse = await fetch(upload.signed_url, {
+          method: 'PUT',
+          headers: { 'x-upsert': 'false' },
+          body: uploadBody,
+        })
+        if (!uploadResponse.ok) {
+          throw new Error(`Unable to upload ${descriptor.file.name}. Please try again.`)
+        }
+        uploadedMedia.push({
+          storage_path: upload.storage_path,
+          title: descriptor.title,
+          alt_text: descriptor.alt_text,
+          purpose: descriptor.purpose,
+          unit_client_id: descriptor.unit_client_id,
+          unit_type_code: descriptor.unit_type_code,
+        })
+      }
+
+      for (const descriptor of descriptors) formData.delete(descriptor.input_name)
+      formData.set('uploaded_media', JSON.stringify(uploadedMedia))
+      startTransition(() => formAction(formData))
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Unable to upload the project images.')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <input type="hidden" name="typical_units" value={JSON.stringify(serializedTypicalUnits)} />
       <input type="hidden" name="special_floor_configurations" value={JSON.stringify(serializedSpecialFloors)} />
 
@@ -524,19 +675,33 @@ export function ProjectWizardForm() {
             <Label htmlFor="description">Full description</Label>
             <Textarea id="description" name="description" className="min-h-32" placeholder="Describe the project, its design and location." />
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="project_images">Project images</Label>
-            <Input
-              id="project_images"
-              name="project_images"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              required
-            />
-            <p className="text-xs leading-5 text-muted-foreground">
-              Upload 3 or 4 images from your computer. Accepted formats: JPG, PNG and WebP; maximum 10 MB per image. The first image is used as the main project image.
-            </p>
+          <div className="space-y-4 md:col-span-2">
+            <div>
+              <Label>Building images</Label>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Upload at least three building views. The first becomes the main project image. A fourth building view is optional.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1, 2, 3, 4].map((index) => (
+                <div key={index} className="space-y-2">
+                  <Label htmlFor={`building_image_${index}`}>Building image {index}{index === 4 ? ' (optional)' : ''}</Label>
+                  <Input
+                    id={`building_image_${index}`}
+                    name={`building_image_${index}`}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    required={index <= 3}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location_image">Location image</Label>
+              <Input id="location_image" name="location_image" type="file" accept="image/jpeg,image/png,image/webp" required />
+              <p className="text-xs text-muted-foreground">Use a site map, aerial view or surrounding-area image.</p>
+            </div>
+            <p className="text-xs text-muted-foreground">JPG, PNG or WebP; maximum 10 MB per image.</p>
           </div>
         </div>
       </Step>
@@ -586,8 +751,8 @@ export function ProjectWizardForm() {
         </label>
       </Step>
 
-      {state.error ? (
-        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">{state.error}</p>
+      {uploadError || state.error ? (
+        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">{uploadError ?? state.error}</p>
       ) : null}
 
       <div className="sticky bottom-4 flex items-center justify-between rounded-xl border bg-card/95 p-4 shadow-lg backdrop-blur">
@@ -595,9 +760,9 @@ export function ProjectWizardForm() {
           <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
           Creation is atomic and audited.
         </p>
-        <Button type="submit" size="lg" disabled={isPending}>
-          {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
-          {isPending ? 'Creating project...' : 'Create project'}
+        <Button type="submit" size="lg" disabled={isPending || isUploading}>
+          {isPending || isUploading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+          {isUploading ? 'Uploading images...' : isPending ? 'Creating project...' : 'Create project'}
         </Button>
       </div>
     </form>
