@@ -754,7 +754,7 @@ export function ProjectWizardForm() {
           <span>
             <span className="block text-sm font-medium">Publish after creation</span>
             <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-              Requires 3 or 4 uploaded project images. The website receives only the approved publication-safe snapshot.
+              Requires three building images, one location image and one image for every unit configuration. The website receives only the approved publication-safe snapshot.
             </span>
           </span>
         </label>
