@@ -93,3 +93,31 @@ export async function POST(request: Request) {
 
   return Response.json({ uploads })
 }
+
+
+export async function DELETE(request: Request) {
+  const { url, serviceRoleKey } = getSupabaseServerConfig()
+  const accessToken = (await cookies()).get(sessionCookieName)?.value
+  const userId = accessToken ? userIdFromToken(accessToken) : undefined
+
+  if (!accessToken || !userId || !serviceRoleKey) {
+    return Response.json({ message: 'Unauthorized.' }, { status: 401 })
+  }
+
+  const body = await request.json().catch(() => null) as { paths?: string[] } | null
+  const paths = body?.paths?.filter((path) => path.startsWith(`${userId}/`)) ?? []
+  if (paths.length === 0) return Response.json({ deleted: 0 })
+
+  const response = await fetch(`${url}/storage/v1/object/${mediaBucket}`, {
+    method: 'DELETE',
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prefixes: paths }),
+    cache: 'no-store',
+  })
+
+  return Response.json({ deleted: response.ok ? paths.length : 0 }, { status: response.ok ? 200 : 502 })
+}
