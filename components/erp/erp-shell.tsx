@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   Bell,
   Building2,
@@ -21,23 +24,30 @@ import { cn } from '@/lib/utils'
 import { LogoutButton } from './logout-button'
 
 const navigationItems = [
-  { label: 'Dashboard', href: '/erp', icon: LayoutDashboard },
-  { label: 'Projects', href: '/erp/projects', icon: Building2 },
-  { label: 'Sales CRM', href: '/erp/sales', icon: Users },
-  { label: 'Finance', href: '/erp/finance', icon: WalletCards },
-  { label: 'Construction', href: '/erp/construction', icon: Hammer },
-  { label: 'Procurement', href: '/erp/procurement', icon: ClipboardList },
-  { label: 'Inventory', href: '/erp/inventory', icon: Package },
-  { label: 'Contractors', href: '/erp/contractors', icon: Factory },
-  { label: 'Documents', href: '/erp/documents', icon: FileText },
-  { label: 'Events', href: '/erp/events', icon: ReceiptText },
+  { label: 'Dashboard', href: '/erp', icon: LayoutDashboard, title: 'Operations Dashboard' },
+  { label: 'Projects', href: '/erp/projects', icon: Building2, title: 'Projects Module' },
+  { label: 'Sales CRM', href: '/erp/sales', icon: Users, title: 'Sales CRM' },
+  { label: 'Finance', href: '/erp/finance', icon: WalletCards, title: 'Finance' },
+  { label: 'Construction', href: '/erp/construction', icon: Hammer, title: 'Construction' },
+  { label: 'Procurement', href: '/erp/procurement', icon: ClipboardList, title: 'Procurement' },
+  { label: 'Inventory', href: '/erp/inventory', icon: Package, title: 'Inventory' },
+  { label: 'Contractors', href: '/erp/contractors', icon: Factory, title: 'Contractors' },
+  { label: 'Documents', href: '/erp/documents', icon: FileText, title: 'Documents' },
+  { label: 'Events', href: '/erp/events', icon: ReceiptText, title: 'Events' },
 ] as const
 
 type ErpShellProps = {
   children: React.ReactNode
 }
 
+function isActivePath(pathname: string, href: string) {
+  return href === '/erp' ? pathname === '/erp' : pathname === href || pathname.startsWith(`${href}/`)
+}
+
 export function ErpShell({ children }: ErpShellProps) {
+  const pathname = usePathname()
+  const activeItem = navigationItems.find((item) => isActivePath(pathname, item.href)) ?? navigationItems[0]
+
   return (
     <div className="min-h-screen bg-[#eef1ed] text-foreground">
       <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col">
@@ -54,19 +64,23 @@ export function ErpShell({ children }: ErpShellProps) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4" aria-label="ERP modules">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                item.href === '/erp' && 'bg-sidebar-accent text-sidebar-accent-foreground',
-              )}
-            >
-              <item.icon className="size-4" aria-hidden="true" />
-              {item.label}
-            </Link>
-          ))}
+          {navigationItems.map((item) => {
+            const active = isActivePath(pathname, item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  active && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                )}
+              >
+                <item.icon className="size-4" aria-hidden="true" />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="border-t border-sidebar-border p-4">
@@ -89,17 +103,17 @@ export function ErpShell({ children }: ErpShellProps) {
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>ERP</span>
                 <ChevronRight className="size-3" aria-hidden="true" />
-                <span>Foundation</span>
+                <span>{activeItem.label}</span>
               </div>
-              <h1 className="mt-1 font-serif text-xl font-semibold text-foreground">Operations Dashboard</h1>
+              <h1 className="mt-1 font-serif text-xl font-semibold text-foreground">{activeItem.title}</h1>
             </div>
 
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" aria-label="Notifications">
                 <Bell className="size-4" aria-hidden="true" />
               </Button>
-              <Button variant="secondary" size="sm">
-                Alet Main Project
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/erp/projects">Alet Main Project</Link>
               </Button>
               <LogoutButton />
             </div>
