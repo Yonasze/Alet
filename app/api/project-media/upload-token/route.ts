@@ -28,15 +28,12 @@ function safeFileName(name: string) {
 }
 
 export async function POST(request: Request) {
-  const { url, serviceRoleKey } = getSupabaseServerConfig()
+  const { url, anonKey } = getSupabaseServerConfig()
   const accessToken = (await cookies()).get(sessionCookieName)?.value
   const userId = accessToken ? userIdFromToken(accessToken) : undefined
 
   if (!accessToken || !userId) {
     return Response.json({ message: 'Your ERP session expired. Sign in again.' }, { status: 401 })
-  }
-  if (!serviceRoleKey) {
-    return Response.json({ message: 'Image upload is not configured.' }, { status: 503 })
   }
 
   const body = await request.json().catch(() => null) as { files?: UploadRequest[] } | null
@@ -65,8 +62,8 @@ export async function POST(request: Request) {
       {
         method: 'POST',
         headers: {
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: anonKey,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: '{}',
@@ -94,13 +91,12 @@ export async function POST(request: Request) {
   return Response.json({ uploads })
 }
 
-
 export async function DELETE(request: Request) {
-  const { url, serviceRoleKey } = getSupabaseServerConfig()
+  const { url, anonKey } = getSupabaseServerConfig()
   const accessToken = (await cookies()).get(sessionCookieName)?.value
   const userId = accessToken ? userIdFromToken(accessToken) : undefined
 
-  if (!accessToken || !userId || !serviceRoleKey) {
+  if (!accessToken || !userId) {
     return Response.json({ message: 'Unauthorized.' }, { status: 401 })
   }
 
@@ -111,8 +107,8 @@ export async function DELETE(request: Request) {
   const response = await fetch(`${url}/storage/v1/object/${mediaBucket}`, {
     method: 'DELETE',
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ prefixes: paths }),
