@@ -39,8 +39,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { files?: UploadRequest[] } | null
   const files = body?.files
 
-  if (!Array.isArray(files) || files.length < 5 || files.length > 100) {
-    return Response.json({ message: 'Choose the required project and unit images.' }, { status: 400 })
+  if (!Array.isArray(files) || files.length < 1 || files.length > 100) {
+    return Response.json({ message: 'Choose one or more project images.' }, { status: 400 })
   }
   if (files.some((file) => (
     !file.client_key ||
