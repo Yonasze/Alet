@@ -325,6 +325,7 @@ export function ProjectWizardForm() {
 
     setUploadError(undefined)
     setIsUploading(true)
+    let preparedPaths: string[] = []
 
     try {
       for (let index = 1; index <= 4; index += 1) {
@@ -378,6 +379,7 @@ export function ProjectWizardForm() {
         throw new Error(tokenResult.message ?? 'Unable to prepare the image uploads.')
       }
 
+      preparedPaths = tokenResult.uploads.map((item) => item.storage_path)
       const uploadByKey = new Map(tokenResult.uploads.map((item) => [item.client_key, item]))
       const uploadedMedia = []
       for (const descriptor of descriptors) {
@@ -408,6 +410,13 @@ export function ProjectWizardForm() {
       formData.set('uploaded_media', JSON.stringify(uploadedMedia))
       startTransition(() => formAction(formData))
     } catch (error) {
+      if (preparedPaths.length > 0) {
+        await fetch('/api/project-media/upload-token', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: preparedPaths }),
+        }).catch(() => undefined)
+      }
       setUploadError(error instanceof Error ? error.message : 'Unable to upload the project images.')
     } finally {
       setIsUploading(false)
