@@ -29,7 +29,7 @@ export default async function PublicProjectPage({ params }: ProjectPageProps) {
   if (!data) notFound()
 
   const { project, unitTypes, media, milestones } = data
-  const gallery = media.filter((item) => !item.is_hero)
+  const gallery = media.filter((item) => item.purpose !== 'unit' && !item.is_hero)
 
   return (
     <main className="min-h-screen bg-[#f4f2ec] text-[#173647]">
@@ -141,8 +141,19 @@ export default async function PublicProjectPage({ params }: ProjectPageProps) {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b38a4a]">Available unit types</p>
           <h2 className="mt-3 font-serif text-4xl font-semibold">Find the right space.</h2>
           <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {unitTypes.map((unitType) => (
-              <Card key={unitType.code}>
+            {unitTypes.map((unitType) => {
+              const unitImage = media.find(
+                (item) => item.purpose === 'unit' && item.unit_type_code === unitType.code,
+              )
+              return (
+              <Card key={unitType.code} className="overflow-hidden">
+                {unitImage ? (
+                  <img
+                    src={unitImage.public_url}
+                    alt={unitImage.alt_text ?? unitImage.title ?? unitType.name}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                ) : null}
                 <CardHeader>
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -169,7 +180,8 @@ export default async function PublicProjectPage({ params }: ProjectPageProps) {
                   {unitType.bedrooms !== null ? <p>{unitType.bedrooms === 0 ? 'Studio' : `${unitType.bedrooms} bedrooms`}</p> : null}
                 </CardContent>
               </Card>
-            ))}
+              )
+            })}
             {unitTypes.length === 0 ? (
               <p className="col-span-full rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
                 Available unit types will appear here after inventory is released.
