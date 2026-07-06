@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatEtb, formatPhase, getPublicProject } from '@/services/projects/supabase-project-service'
 
+import { PublicEnquiryForm } from './public-enquiry-form'
+
 export const revalidate = 60
 
 type ProjectPageProps = {
@@ -229,6 +231,23 @@ export default async function PublicProjectPage({ params }: ProjectPageProps) {
             <CardContent className="whitespace-pre-line text-sm leading-7 text-muted-foreground">
               {project.offers ?? 'There are no public offers at this time.'}
             </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section id="enquire" className="bg-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b38a4a]">Speak with sales</p>
+            <h2 className="mt-3 font-serif text-4xl font-semibold">Interested in this project?</h2>
+            <p className="mt-5 text-base leading-8 text-[#173647]/70">
+              Tell us what you are looking for. Your enquiry goes directly to the Alet sales team for follow-up.
+            </p>
+            <p className="mt-4 text-sm text-[#173647]/60">We do not publish individual unit numbers, inventory counts or customer information.</p>
+          </div>
+          <Card>
+            <CardHeader><CardTitle>Request project information</CardTitle></CardHeader>
+            <CardContent><PublicEnquiryForm projectSlug={slug} unitTypes={unitTypes} /></CardContent>
           </Card>
         </div>
       </section>
