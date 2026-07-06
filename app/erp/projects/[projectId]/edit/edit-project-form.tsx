@@ -225,6 +225,11 @@ export function EditProjectForm({ projectId, project, unitTypes }: EditProjectFo
           <div className="space-y-2"><Label htmlFor="address">Street address</Label><Input id="address" name="address" defaultValue={value(project, 'address')} /></div>
           <div className="space-y-2"><Label htmlFor="subcity">Subcity</Label><Input id="subcity" name="subcity" defaultValue={value(project, 'subcity')} /></div>
           <div className="space-y-2"><Label htmlFor="city">City</Label><Input id="city" name="city" defaultValue={value(project, 'city') || 'Addis Ababa'} required /></div>
+          <div className="space-y-2">
+            <Label htmlFor="basement_floors">Basement levels</Label>
+            <Input id="basement_floors" name="basement_floors" type="number" min="0" max="20" step="1" defaultValue={value(project, 'basement_floors') || '0'} required />
+            <p className="text-xs text-muted-foreground">Creates Basement 1, Basement 2 and so on as selectable Project and Construction levels.</p>
+          </div>
           <div className="space-y-2"><Label htmlFor="google_maps_url">Google Maps URL</Label><Input id="google_maps_url" name="google_maps_url" type="url" defaultValue={value(project, 'google_maps_url')} /></div>
           <div className="space-y-2"><Label htmlFor="latitude">Latitude</Label><Input id="latitude" name="latitude" type="number" step="any" defaultValue={value(project, 'latitude')} /></div>
           <div className="space-y-2"><Label htmlFor="longitude">Longitude</Label><Input id="longitude" name="longitude" type="number" step="any" defaultValue={value(project, 'longitude')} /></div>
