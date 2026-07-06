@@ -4,13 +4,15 @@ import { useActionState, useMemo, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import type { SalesLead, SalesProject, SalesUnit, SalesUnitType } from '@/services/sales/supabase-sales-service'
+import type { SalesCustomer, SalesLead, SalesProject, SalesReservation, SalesUnit, SalesUnitType } from '@/services/sales/supabase-sales-service'
 
 import {
   createLeadAction,
   createReservationAction,
   type SalesActionState,
+  updateCustomerAction,
   updateLeadAction,
+  updateReservationAction,
 } from './actions'
 
 const initialState: SalesActionState = {}
@@ -94,40 +96,115 @@ export function NewLeadForm({ projects, unitTypes }: { projects: SalesProject[];
   )
 }
 
-export function LeadUpdateForm({ lead }: { lead: SalesLead }) {
+export function LeadUpdateForm({ lead, unitTypes }: { lead: SalesLead; unitTypes: SalesUnitType[] }) {
   const boundAction = updateLeadAction.bind(null, lead.id)
   const [state, action] = useActionState(boundAction, initialState)
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-5">
       <Message state={state} />
-      <label className="block space-y-1.5 text-sm font-medium">Pipeline stage
-        <select name="stage" defaultValue={lead.stage} className={fieldClass}>
-          {['new','contacted','qualified','viewing','unit_selected','on_hold','reserved','contracted','sold','handed_over','closed'].map((stage) => (
-            <option key={stage} value={stage}>{stage.split('_').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ')}</option>
-          ))}
-        </select>
-      </label>
-      <label className="block space-y-1.5 text-sm font-medium">Next follow-up
-        <input name="next_follow_up_at" type="datetime-local" className={fieldClass} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-1.5 text-sm font-medium">Full name
+          <input name="full_name" defaultValue={lead.full_name} className={fieldClass} required />
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Interested unit type
+          <select name="unit_type_id" defaultValue={lead.unit_type_id ?? ''} className={fieldClass}>
+            <option value="">Not decided</option>{unitTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Phone
+          <input name="phone" defaultValue={lead.phone ?? ''} className={fieldClass} />
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Email
+          <input name="email" type="email" defaultValue={lead.email ?? ''} className={fieldClass} />
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Preferred contact
+          <select name="preferred_contact_method" defaultValue={lead.preferred_contact_method} className={fieldClass}>
+            <option value="phone">Phone</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option>
+          </select>
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Source
+          <input name="source" defaultValue={lead.source} className={fieldClass} />
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Minimum budget (ETB)
+          <input name="budget_min_etb" defaultValue={lead.budget_min_etb ?? ''} inputMode="decimal" className={fieldClass} />
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Maximum budget (ETB)
+          <input name="budget_max_etb" defaultValue={lead.budget_max_etb ?? ''} inputMode="decimal" className={fieldClass} />
+        </label>
+      </div>
+      <label className="block space-y-1.5 text-sm font-medium">Enquiry message
+        <textarea name="message" defaultValue={lead.message ?? ''} className={areaClass} />
       </label>
       <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-1.5 text-sm font-medium">Pipeline stage
+          <select name="stage" defaultValue={lead.stage} className={fieldClass}>
+            {['new','contacted','qualified','viewing','unit_selected','on_hold','reserved','contracted','sold','handed_over','closed'].map((stage) => (
+              <option key={stage} value={stage}>{stage.split('_').map((part) => part[0].toUpperCase() + part.slice(1)).join(' ')}</option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1.5 text-sm font-medium">Next follow-up
+          <input name="next_follow_up_at" type="datetime-local" className={fieldClass} />
+        </label>
         <label className="space-y-1.5 text-sm font-medium">Activity type
           <select name="activity_type" className={fieldClass}>
             <option value="note">Note</option><option value="call">Call</option><option value="email">Email</option><option value="meeting">Meeting</option><option value="viewing">Viewing</option><option value="follow_up">Follow-up</option>
           </select>
         </label>
         <label className="space-y-1.5 text-sm font-medium">Lost/closed reason
-          <input name="lost_reason" className={fieldClass} placeholder="Required when closing as lost" />
+          <input name="lost_reason" defaultValue={lead.lost_reason ?? ''} className={fieldClass} />
         </label>
       </div>
-      <label className="block space-y-1.5 text-sm font-medium">Activity summary
+      <label className="block space-y-1.5 text-sm font-medium">New activity summary
         <textarea name="activity_summary" className={areaClass} placeholder="What happened and what is next?" />
       </label>
-      <label className="block space-y-1.5 text-sm font-medium">Persistent internal notes
+      <label className="block space-y-1.5 text-sm font-medium">Internal notes
         <textarea name="notes" defaultValue={lead.notes ?? ''} className={areaClass} />
       </label>
-      <SubmitButton label="Save update" />
+      <SubmitButton label="Save all lead changes" />
+    </form>
+  )
+}
+
+export function CustomerEditForm({ customer }: { customer: SalesCustomer }) {
+  const boundAction = updateCustomerAction.bind(null, customer.id)
+  const [state, action] = useActionState(boundAction, initialState)
+  return (
+    <form action={action} className="space-y-4">
+      <Message state={state} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-1.5 text-sm font-medium">Full name<input name="full_name" defaultValue={customer.full_name} className={fieldClass} required /></label>
+        <label className="space-y-1.5 text-sm font-medium">Phone<input name="phone" defaultValue={customer.phone ?? ''} className={fieldClass} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Email<input name="email" type="email" defaultValue={customer.email ?? ''} className={fieldClass} /></label>
+        <label className="space-y-1.5 text-sm font-medium">Address<input name="address" defaultValue={customer.address ?? ''} className={fieldClass} /></label>
+        <label className="space-y-1.5 text-sm font-medium">ID type<input name="government_id_type" defaultValue={customer.government_id_type ?? ''} className={fieldClass} /></label>
+        <label className="space-y-1.5 text-sm font-medium">ID number<input name="government_id_number" defaultValue={customer.government_id_number ?? ''} className={fieldClass} /></label>
+      </div>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="consent_given" defaultChecked={customer.consent_given} />Marketing/contact consent recorded</label>
+      <SubmitButton label="Save customer details" />
+    </form>
+  )
+}
+
+export function ReservationEditForm({ reservation }: { reservation: SalesReservation }) {
+  const boundAction = updateReservationAction.bind(null, reservation.id)
+  const [state, action] = useActionState(boundAction, initialState)
+  return (
+    <form action={action} className="space-y-3 rounded-lg border bg-muted/30 p-3">
+      <Message state={state} />
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="space-y-1 text-xs font-medium">VAT-inclusive agreed price
+          <input name="reserved_price_etb" defaultValue={reservation.reserved_price_etb} inputMode="decimal" className={fieldClass} />
+        </label>
+        <label className="space-y-1 text-xs font-medium">Expiry
+          <input name="expires_at" type="datetime-local" className={fieldClass} />
+        </label>
+      </div>
+      <label className="block space-y-1 text-xs font-medium">Reservation notes
+        <textarea name="notes" defaultValue={reservation.notes ?? ''} className={areaClass} />
+      </label>
+      <SubmitButton label="Update reservation" />
     </form>
   )
 }
