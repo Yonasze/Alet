@@ -16,9 +16,10 @@ export default async function SalesCustomerPage({ params }: Props) {
   const { customerId } = await params
   const data = await getSalesCustomer(customerId)
   if (!data) notFound()
-  const { customer, leads, reservations, contracts, projects, units } = data
+  const { customer, leads, reservations, contracts, projects, units, finance } = data
   const projectNames = new Map(projects.map((item) => [item.id,item.name]))
   const unitNumbers = new Map(units.map((item) => [item.id,item.unit_number]))
+  const financeByContract = new Map(finance.map((item) => [item.contract_id,item]))
 
   return (
     <div className="space-y-6">
@@ -37,7 +38,7 @@ export default async function SalesCustomerPage({ params }: Props) {
           {reservations.length===0 ? <p className="text-sm text-muted-foreground">No reservations.</p> : null}
         </CardContent></Card>
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><FileSignature className="size-5" />Contracts</CardTitle></CardHeader><CardContent className="space-y-3">
-          {contracts.map((item) => <div key={item.id} className="rounded-lg border p-3"><div className="flex justify-between gap-3"><div><p className="font-medium">{item.contract_number}</p><p className="text-xs text-muted-foreground">Unit {unitNumbers.get(item.unit_id)}</p></div><Badge variant="outline">{salesStageLabel(item.status)}</Badge></div><p className="mt-3 text-sm font-semibold">{formatEtb(item.total_price_etb)}</p></div>)}
+          {contracts.map((item) => <div key={item.id} className="rounded-lg border p-3"><div className="flex justify-between gap-3"><div><p className="font-medium">{item.contract_number}</p><p className="text-xs text-muted-foreground">Unit {unitNumbers.get(item.unit_id)}</p></div><Badge variant="outline">{salesStageLabel(item.status)}</Badge></div><p className="mt-3 text-sm font-semibold">{formatEtb(item.total_price_etb)}</p>{financeByContract.get(item.id) ? <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span>Paid: {formatEtb(financeByContract.get(item.id)?.paid_etb)}</span><span>Outstanding: {formatEtb(financeByContract.get(item.id)?.outstanding_etb)}</span></div> : null}</div>)}
           {contracts.length===0 ? <p className="text-sm text-muted-foreground">No contracts.</p> : null}
         </CardContent></Card>
       </div>
