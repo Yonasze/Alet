@@ -127,6 +127,7 @@ export async function createProjectAction(
   }
 
   const totalFloors = Math.max(0, numberValue(formData, 'total_floors', 0))
+  const basementFloors = Math.max(0, numberValue(formData, 'basement_floors', 0))
   const typicalFloorStart = numberValue(formData, 'typical_floor_start', 0)
   const typicalFloorEnd = numberValue(formData, 'typical_floor_end', totalFloors)
   const typicalUnits = parseJson<UnitConfiguration[]>(formData, 'typical_units', []).map(normalizeUnit)
@@ -153,6 +154,10 @@ export async function createProjectAction(
     (item) => item.purpose === 'unit' && item.unit_client_id === unit.client_id,
   ))) {
     return fail('Upload one configuration image for every typical and special-floor unit.')
+  }
+
+  if (!Number.isInteger(basementFloors) || basementFloors > 20) {
+    return fail('Basement levels must be a whole number between 0 and 20.')
   }
 
   if (
@@ -203,6 +208,7 @@ export async function createProjectAction(
     longitude: stringValue(formData, 'longitude'),
     google_maps_url: stringValue(formData, 'google_maps_url'),
     total_floors: totalFloors,
+    basement_floors: basementFloors,
     typical_floor_start: typicalFloorStart,
     typical_floor_end: typicalFloorEnd,
     floors_completed: numberValue(formData, 'floors_completed'),
