@@ -223,6 +223,8 @@ export function ProjectWizardForm() {
   const [uploadError, setUploadError] = useState<string>()
   const [highestFloorInput, setHighestFloorInput] = useState('10')
   const totalFloors = Math.max(0, Number.parseInt(highestFloorInput, 10) || 0)
+  const [basementFloorInput, setBasementFloorInput] = useState('0')
+  const basementFloors = Math.min(20, Math.max(0, Number.parseInt(basementFloorInput, 10) || 0))
   const [typicalFloorStart, setTypicalFloorStart] = useState<number | ''>(0)
   const [typicalFloorEnd, setTypicalFloorEnd] = useState<number | ''>(10)
   const [newSpecialFloor, setNewSpecialFloor] = useState(0)
@@ -447,8 +449,8 @@ export function ProjectWizardForm() {
         </div>
       </Step>
 
-      <Step number={3} title="Building floors" description="Enter the highest numbered floor. Ground Floor is floor 0 and is included automatically.">
-        <div className="grid gap-4 md:grid-cols-2">
+      <Step number={3} title="Building floors" description="Set the basement levels and highest upper floor. Ground Floor is always included, even when it contains only parking or a lobby.">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="total_floors">Highest floor number</Label>
             <Input
@@ -473,6 +475,23 @@ export function ProjectWizardForm() {
               required
             />
             <p className="text-xs text-muted-foreground">Accepts any whole number such as 10, 20 or 35.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="basement_floors">Basement levels</Label>
+            <Input
+              id="basement_floors"
+              name="basement_floors"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]+"
+              value={basementFloorInput}
+              onChange={(event) => setBasementFloorInput(event.target.value.replace(/\D/g, '').slice(0, 2))}
+              placeholder="2"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter 0 for none, 1 for Basement 1, or 2 for Basement 1 and Basement 2. Maximum 20.
+            </p>
           </div>
           <Field label="Floors completed" name="floors_completed" type="number" min="0" defaultValue="0" required />
         </div>
@@ -528,7 +547,7 @@ export function ProjectWizardForm() {
         </div>
       </Step>
 
-      <Step number={5} title="Special-floor configurations" description="Optional: select Ground Floor or any nonconsecutive numbered floors. Every selected floor gets an independent layout.">
+      <Step number={5} title="Special-floor configurations" description="Optional unit layouts for Ground Floor or nonconsecutive upper floors. Basement levels are created from the building setting and may remain without units.">
         <div className="space-y-5">
           <div className="flex flex-wrap items-end gap-3 rounded-xl border bg-muted/30 p-4">
             <div className="min-w-56 space-y-2">
@@ -612,7 +631,7 @@ export function ProjectWizardForm() {
           ))}
           {specialFloors.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No special floors added. Floors 1 through the highest floor must be covered by the typical range. Ground Floor may be left without units for parking or a lobby.
+              No special floors added. Floors 1 through the highest floor must be covered by the typical range. Ground Floor and configured basements may remain without units for parking, storage, services or a lobby.
             </p>
           ) : null}
         </div>
