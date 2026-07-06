@@ -106,6 +106,7 @@ export async function updateProjectAction(
     payment_plan_summary: stringValue(formData, 'payment_plan_summary'),
     offers: stringValue(formData, 'offers'),
     phase: stringValue(formData, 'phase') || 'planning_design',
+    basement_floors: stringValue(formData, 'basement_floors'),
     floors_completed: stringValue(formData, 'floors_completed'),
     expected_completion_date: stringValue(formData, 'expected_completion_date'),
     unit_types: parseJson(formData, 'unit_type_updates', []),
