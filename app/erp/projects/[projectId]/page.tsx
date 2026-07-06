@@ -166,7 +166,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             <CardTitle className="flex items-center gap-2"><Building2 className="size-5" />Building Structure</CardTitle>
             <CardDescription>One project represents this single building. No development or site grouping is used.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-3">
+          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Basement levels</p><p className="mt-2 text-2xl font-semibold">{number(project.basement_floors)}</p></div>
             <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Highest floor</p><p className="mt-2 text-2xl font-semibold">{number(project.total_floors)}</p></div>
             <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Typical floors</p><p className="mt-2 text-2xl font-semibold">{floors.filter((floor) => floor.floor_kind === 'typical').length}</p></div>
             <div className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">Special floors</p><p className="mt-2 text-2xl font-semibold">{floors.filter((floor) => floor.floor_kind === 'special').length}</p></div>
