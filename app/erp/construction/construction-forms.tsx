@@ -1,7 +1,8 @@
 'use client'
 import {useActionState,useState} from 'react'
 import {Button} from '@/components/ui/button'
-import{constructionFloorLabel,type ConstructionFloor,type ConstructionProfile,type ConstructionProject,type WorkPackage}from '@/services/construction/supabase-construction-service'
+import{constructionFloorLabel}from '@/services/construction/supabase-construction-service'
+import type{ConstructionFloor,ConstructionProfile,ConstructionProject,WorkPackage}from '@/services/construction/supabase-construction-service'
 import{createDailyReportAction,createInspectionAction,createIssueAction,createMilestoneAction,createWorkPackageAction,type ConstructionActionState,updateWorkPackageAction}from './actions'
 const initial:ConstructionActionState={}
 const field='h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30'
