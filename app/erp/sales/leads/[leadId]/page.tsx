@@ -42,7 +42,7 @@ export default async function SalesLeadPage({ params }: Props) {
         </div>
         <Card>
           <CardHeader><CardTitle>Update lead</CardTitle><CardDescription>Move the lead through the pipeline and record every contact.</CardDescription></CardHeader>
-          <CardContent><LeadUpdateForm lead={lead} /></CardContent>
+          <CardContent><LeadUpdateForm lead={lead} unitTypes={unitTypes.filter((item) => item.project_id === lead.project_id)} /></CardContent>
         </Card>
       </div>
       <Card>
