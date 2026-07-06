@@ -8,7 +8,7 @@ import { formatSalesDate, getSalesWorkspace, salesStageLabel } from '@/services/
 
 import { reservationAction } from '../actions'
 import { SalesNav } from '../sales-nav'
-import { ReservationForm } from '../sales-forms'
+import { ReservationEditForm, ReservationForm } from '../sales-forms'
 
 function availableAction(status: string) {
   if (status === 'on_hold') return { action: 'reserve', label: 'Confirm reservation' }
@@ -51,6 +51,7 @@ export default async function SalesReservationsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-3 text-sm sm:grid-cols-3"><div><p className="text-xs text-muted-foreground">Customer</p><p className="font-medium">{customer?.full_name ?? lead?.full_name}</p></div><div><p className="text-xs text-muted-foreground">Agreed price</p><p className="font-medium">{formatEtb(item.reserved_price_etb)}</p></div><div><p className="text-xs text-muted-foreground">Expiry</p><p className="flex items-center gap-1 font-medium"><CalendarClock className="size-3.5" />{formatSalesDate(expiry)}</p></div></div>
+                  {['on_hold','reserved'].includes(item.status) ? <ReservationEditForm reservation={item} /> : null}
                   {!['cancelled','expired','handed_over'].includes(item.status) ? (
                     <div className="flex flex-wrap gap-2 border-t pt-4">
                       {next ? <form action={reservationAction.bind(null,item.id)}><input type="hidden" name="action" value={next.action} /><Button type="submit">{next.label}</Button></form> : null}
