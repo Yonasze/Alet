@@ -92,6 +92,8 @@ export type SalesCustomer = {
   government_id_number: string | null
   consent_given: boolean
 }
+export type SalesFinanceSummary = { contract_id: string; total_price_etb: number; paid_etb: number; outstanding_etb: number; next_due_date: string | null }
+
 export type SalesActivity = {
   id: string
   lead_id: string | null
@@ -117,15 +119,16 @@ export async function getSalesWorkspace() {
 
 export async function getSalesCustomer(customerId: string) {
   const id = encodeURIComponent(customerId)
-  const [customers, leads, reservations, contracts, projects, units] = await Promise.all([
+  const [customers, leads, reservations, contracts, projects, units, finance] = await Promise.all([
     salesRequest<SalesCustomer[]>(`sales_customers?select=*&id=eq.${id}&limit=1`),
     salesRequest<SalesLead[]>(`sales_leads?select=*&customer_id=eq.${id}&order=created_at.desc`),
     salesRequest<SalesReservation[]>(`sales_reservations?select=*&customer_id=eq.${id}&order=created_at.desc`),
     salesRequest<SalesContract[]>(`sales_contracts?select=*&customer_id=eq.${id}&order=created_at.desc`),
     salesRequest<SalesProject[]>('projects?select=id,name,code&order=name.asc'),
     salesRequest<SalesUnit[]>('units?select=id,project_id,unit_type_id,unit_number,status,gross_area_sqm,net_area_sqm,base_price&order=unit_number.asc'),
+    salesRequest<SalesFinanceSummary[]>(`sales_contract_finance_summary?select=*&customer_id=eq.${id}`),
   ])
-  return customers[0] ? { customer: customers[0], leads, reservations, contracts, projects, units } : null
+  return customers[0] ? { customer: customers[0], leads, reservations, contracts, projects, units, finance } : null
 }
 
 export async function getSalesLead(leadId: string) {
