@@ -82,7 +82,16 @@ export type SalesUnit = {
   net_area_sqm: number | null
   base_price: number | null
 }
-export type SalesCustomer = { id: string; full_name: string; phone: string | null; email: string | null }
+export type SalesCustomer = {
+  id: string
+  full_name: string
+  phone: string | null
+  email: string | null
+  address: string | null
+  government_id_type: string | null
+  government_id_number: string | null
+  consent_given: boolean
+}
 export type SalesActivity = {
   id: string
   lead_id: string | null
@@ -101,9 +110,22 @@ export async function getSalesWorkspace() {
     salesRequest<SalesProject[]>('projects?select=id,name,code&order=name.asc'),
     salesRequest<SalesUnitType[]>('unit_types?select=id,project_id,code,name,bedrooms&order=name.asc'),
     salesRequest<SalesUnit[]>('units?select=id,project_id,unit_type_id,unit_number,status,gross_area_sqm,net_area_sqm,base_price&order=unit_number.asc'),
-    salesRequest<SalesCustomer[]>('sales_customers?select=id,full_name,phone,email&order=full_name.asc'),
+    salesRequest<SalesCustomer[]>('sales_customers?select=id,full_name,phone,email,address,government_id_type,government_id_number,consent_given&order=full_name.asc'),
   ])
   return { leads, reservations, contracts, projects, unitTypes, units, customers }
+}
+
+export async function getSalesCustomer(customerId: string) {
+  const id = encodeURIComponent(customerId)
+  const [customers, leads, reservations, contracts, projects, units] = await Promise.all([
+    salesRequest<SalesCustomer[]>(`sales_customers?select=*&id=eq.${id}&limit=1`),
+    salesRequest<SalesLead[]>(`sales_leads?select=*&customer_id=eq.${id}&order=created_at.desc`),
+    salesRequest<SalesReservation[]>(`sales_reservations?select=*&customer_id=eq.${id}&order=created_at.desc`),
+    salesRequest<SalesContract[]>(`sales_contracts?select=*&customer_id=eq.${id}&order=created_at.desc`),
+    salesRequest<SalesProject[]>('projects?select=id,name,code&order=name.asc'),
+    salesRequest<SalesUnit[]>('units?select=id,project_id,unit_type_id,unit_number,status,gross_area_sqm,net_area_sqm,base_price&order=unit_number.asc'),
+  ])
+  return customers[0] ? { customer: customers[0], leads, reservations, contracts, projects, units } : null
 }
 
 export async function getSalesLead(leadId: string) {
