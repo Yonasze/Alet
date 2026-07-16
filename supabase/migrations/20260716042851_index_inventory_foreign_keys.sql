@@ -1,0 +1,16 @@
+create index if not exists inventory_issue_items_org_idx on public.inventory_issue_items(organization_id);
+create index if not exists inventory_issue_items_project_idx on public.inventory_issue_items(project_id);
+create index if not exists inventory_issue_requests_requested_by_idx on public.inventory_issue_requests(requested_by);
+create index if not exists inventory_issue_requests_approved_by_idx on public.inventory_issue_requests(approved_by);
+create index if not exists inventory_issue_requests_issued_by_idx on public.inventory_issue_requests(issued_by);
+create index if not exists inventory_items_created_by_idx on public.inventory_items(created_by);
+create index if not exists inventory_items_source_requisition_idx on public.inventory_items(source_requisition_item_id);
+create index if not exists inventory_locations_created_by_idx on public.inventory_locations(created_by);
+create index if not exists inventory_locations_org_idx on public.inventory_locations(organization_id);
+create index if not exists inventory_movements_actor_idx on public.inventory_movements(actor_user_id);
+create index if not exists inventory_movements_item_idx on public.inventory_movements(item_id);
+create index if not exists inventory_receipt_items_org_idx on public.inventory_receipt_items(organization_id);
+create index if not exists inventory_receipt_items_project_idx on public.inventory_receipt_items(project_id);
+create index if not exists inventory_receipts_posted_by_idx on public.inventory_receipts(posted_by);
+create index if not exists inventory_stock_item_idx on public.inventory_stock(item_id);
+create index if not exists inventory_stock_org_idx on public.inventory_stock(organization_id);
