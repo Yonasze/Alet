@@ -5,13 +5,15 @@ import { revalidatePath } from 'next/cache'
 
 import {
   createDocumentRecord,
-  documentCategories,
   getCurrentOrganizationId,
   removeDocumentFile,
   runDocumentAction,
   uploadDocumentFile,
-  type DocumentCategory,
 } from '@/services/documents/document-service'
+import {
+  documentCategories,
+  type DocumentCategory,
+} from '@/services/documents/document-types'
 
 const maxFileSize = 10 * 1024 * 1024
 const allowedMimeTypes = new Set([
