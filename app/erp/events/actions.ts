@@ -8,6 +8,7 @@ import { eventCategories, eventPriorities } from '@/services/events/event-types'
 const cookieName = 'alet-erp-session'
 export type EventActionState = { error?: string; success?: string }
 const value = (form: FormData, key: string) => String(form.get(key) ?? '').trim()
+const ethiopiaTimestamp = (input: string) => input ? `${input}:00+03:00` : ''
 
 async function rpc(name: string, payload: Record<string, unknown>) {
   const { url, anonKey } = getSupabaseServerConfig()
@@ -29,7 +30,7 @@ export async function createEventAction(_state: EventActionState, form: FormData
     if (!eventPriorities.includes(priority as never)) throw new Error('Choose a valid priority.')
     await rpc('create_scheduled_event', {
       project_id: value(form,'project_id'), title: value(form,'title'), description: value(form,'description'),
-      category, priority, starts_at: value(form,'starts_at'), ends_at: value(form,'ends_at'),
+      category, priority, starts_at: ethiopiaTimestamp(value(form,'starts_at')), ends_at: ethiopiaTimestamp(value(form,'ends_at')),
       all_day: form.get('all_day') === 'on', location: value(form,'location'), owner_id: value(form,'owner_id'),
       reminder_minutes: value(form,'reminder_minutes') || '60', attendee_ids: form.getAll('attendee_ids').map(String),
     })
@@ -42,5 +43,4 @@ export async function eventWorkflowAction(eventId: string, form: FormData) {
   await rpc('scheduled_event_action', { event_id: eventId, action: value(form,'action') })
   revalidatePath('/erp/events')
 }
-
 
