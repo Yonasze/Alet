@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useMemo, useState } from 'react'
+import { useActionState, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -214,9 +214,8 @@ export function ReservationForm({ leads, units }: { leads: SalesLead[]; units: S
   const eligibleLeads = leads.filter((lead) => lead.status === 'open' && !['on_hold','reserved','contracted','sold','handed_over'].includes(lead.stage))
   const [leadId, setLeadId] = useState(eligibleLeads[0]?.id ?? '')
   const lead = eligibleLeads.find((item) => item.id === leadId)
-  const matchingUnits = useMemo(
-    () => units.filter((unit) => unit.project_id === lead?.project_id && unit.status === 'available'),
-    [units, lead?.project_id],
+  const matchingUnits = units.filter(
+    (unit) => unit.project_id === lead?.project_id && unit.status === 'available',
   )
 
   return (

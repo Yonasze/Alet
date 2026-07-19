@@ -32,7 +32,7 @@ export function SiteHeader() {
             asChild
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <Link href="/project#register">Reserve a Unit</Link>
+            <Link href="/projects">Reserve a Unit</Link>
           </Button>
         </div>
 
@@ -67,7 +67,7 @@ export function SiteHeader() {
               asChild
               className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <Link href="/project#register" onClick={() => setOpen(false)}>
+              <Link href="/projects" onClick={() => setOpen(false)}>
                 Reserve a Unit
               </Link>
             </Button>

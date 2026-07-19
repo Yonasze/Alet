@@ -6,6 +6,8 @@ import type {
   DocumentStatus,
 } from '@/services/documents/document-types'
 
+export type { DocumentStatus } from '@/services/documents/document-types'
+
 const sessionCookieName = 'alet-erp-session'
 const documentBucket = 'erp-documents'
 

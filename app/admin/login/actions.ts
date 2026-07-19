@@ -3,9 +3,11 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { erpSessionCookieName } from '@/lib/auth/erp-access'
+import { getSafeErpNextPath } from '@/lib/auth/safe-next'
+import { getErpSessionForToken } from '@/services/auth/erp-session-service'
 import { signInWithPassword } from '@/services/auth/supabase-auth-service'
 
-const sessionCookieName = 'alet-erp-session'
 const refreshCookieName = 'alet-erp-refresh'
 
 export type LoginActionState = {
@@ -15,18 +17,23 @@ export type LoginActionState = {
 export async function loginAction(_state: LoginActionState, formData: FormData): Promise<LoginActionState> {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
-  const next = String(formData.get('next') ?? '/erp')
+  const next = getSafeErpNextPath(String(formData.get('next') ?? '/erp'))
 
   if (!email || !password) {
-    return { error: 'Enter your admin email and password.' }
+    return { error: 'Enter your work email and password.' }
   }
 
   try {
     const result = await signInWithPassword(email, password)
+    const erpSession = await getErpSessionForToken(result.accessToken, result.user.id)
+    if (!erpSession) {
+      return { error: 'This account does not have an active ERP role.' }
+    }
+
     const cookieStore = await cookies()
     const secure = process.env.NODE_ENV === 'production'
 
-    cookieStore.set(sessionCookieName, result.accessToken, {
+    cookieStore.set(erpSessionCookieName, result.accessToken, {
       httpOnly: true,
       sameSite: 'lax',
       secure,
@@ -47,12 +54,12 @@ export async function loginAction(_state: LoginActionState, formData: FormData):
     }
   }
 
-  redirect(next.startsWith('/') ? next : '/erp')
+  redirect(next)
 }
 
 export async function logoutAction() {
   const cookieStore = await cookies()
-  cookieStore.delete(sessionCookieName)
+  cookieStore.delete(erpSessionCookieName)
   cookieStore.delete(refreshCookieName)
   redirect('/erp/login')
 }

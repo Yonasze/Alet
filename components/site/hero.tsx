@@ -28,7 +28,7 @@ export function Hero() {
               size="lg"
               className="bg-gold text-primary hover:bg-gold/90"
             >
-              <Link href="/project#register">
+              <Link href="/projects">
                 Reserve a Unit
                 <ArrowRight className="size-4" />
               </Link>

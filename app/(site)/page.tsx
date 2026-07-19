@@ -91,7 +91,7 @@ export default function HomePage() {
               </li>
             </ul>
             <Button asChild size="lg" className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/project">
+              <Link href="/projects">
                 View Project
                 <ArrowRight className="size-4" />
               </Link>

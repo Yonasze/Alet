@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BarChart3, ContactRound, FileSignature, ListFilter, LockKeyhole, UsersRound } from 'lucide-react'
+import { BarChart3, ContactRound, FileSignature, ListFilter, LockKeyhole } from 'lucide-react'
 
 const items = [
   { href: '/erp/sales', label: 'Dashboard', icon: BarChart3 },
