@@ -1,15 +1,7 @@
-export type SupabaseRuntimeConfig = {
-  url: string
-  anonKey: string
-}
+import { getPublicSupabaseConfig, type PublicSupabaseConfig } from '@/lib/supabase/public-config'
+
+export type SupabaseRuntimeConfig = PublicSupabaseConfig
 
 export function getSupabaseRuntimeConfig(): SupabaseRuntimeConfig {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!url || !anonKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return { url, anonKey }
+  return getPublicSupabaseConfig()
 }

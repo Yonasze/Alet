@@ -1,3 +1,5 @@
+import { getPublicSupabaseConfig } from '@/lib/supabase/public-config'
+
 type SupabaseAdminUser = {
   id: string
   email?: string
@@ -20,10 +22,10 @@ type RoleRow = { id: string }
 type UserRoleRow = { id: string }
 
 function getAdminAuthConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const { url } = getPublicSupabaseConfig()
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!url || !serviceRoleKey) {
+  if (!serviceRoleKey) {
     throw new Error('Missing Supabase admin environment variables')
   }
 

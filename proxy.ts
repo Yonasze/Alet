@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { erpSessionCookieName } from '@/lib/auth/erp-access'
+import { getPublicSupabaseConfig } from '@/lib/supabase/public-config'
 
 const refreshCookieName = 'alet-erp-refresh'
 
@@ -25,9 +26,8 @@ function tokenIsCurrent(token: string | undefined): boolean {
 
 async function refreshSession(request: NextRequest): Promise<RefreshResponse | null> {
   const refreshToken = request.cookies.get(refreshCookieName)?.value
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!refreshToken || !url || !anonKey) return null
+  const { url, anonKey } = getPublicSupabaseConfig()
+  if (!refreshToken) return null
 
   const response = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
     method: 'POST',
