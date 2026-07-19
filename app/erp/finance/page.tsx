@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import {AlertTriangle,Banknote,CalendarClock,CircleDollarSign,ReceiptText,TrendingUp} from 'lucide-react'
+import {AlertTriangle,Banknote,CalendarClock,CircleDollarSign,TrendingUp} from 'lucide-react'
 import {Badge} from '@/components/ui/badge'
 import {Button} from '@/components/ui/button'
 import {Card,CardContent,CardDescription,CardHeader,CardTitle} from '@/components/ui/card'
 import {formatEtb} from '@/services/projects/supabase-project-service'
-import {financeDate,financeStatusLabel,getFinanceWorkspace} from '@/services/finance/supabase-finance-service'
+import {financeDate,getFinanceWorkspace} from '@/services/finance/supabase-finance-service'
 import {FinanceNav} from './finance-nav'
 export default async function FinancePage(){
  const d=await getFinanceWorkspace();const total=d.receivables.reduce((s,r)=>s+Number(r.total_price_etb),0);const paid=d.receivables.reduce((s,r)=>s+Number(r.paid_etb),0);const outstanding=d.receivables.reduce((s,r)=>s+Number(r.outstanding_etb),0);const awaiting=d.payments.filter(p=>p.status==='submitted');const overdue=d.schedules.filter(s=>s.status!=='paid'&&s.due_date&&new Date(s.due_date)<new Date())

@@ -1,27 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { useActionState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { submitPartnerAction, type PartnerFormState } from '@/app/(site)/partner/actions'
 
-export function PartnerForm() {
-  const [loading, setLoading] = useState(false)
+const initialState: PartnerFormState = {}
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
-    // TODO: connect to Supabase `partner_leads` table (status defaults to "New")
-    await new Promise((r) => setTimeout(r, 700))
-    setLoading(false)
-    e.currentTarget.reset()
-    toast.success('Thank you! Our development team will reach out soon.')
+export function PartnerForm({ projectSlug }: { projectSlug: string }) {
+  const [state, action, isPending] = useActionState(
+    submitPartnerAction.bind(null, projectSlug),
+    initialState,
+  )
+
+  if (state.success) {
+    return (
+      <div role="status" className="rounded-sm border border-emerald-300 bg-emerald-50 p-5 text-emerald-900">
+        Partnership enquiry received. Our development team will contact you soon.
+      </div>
+    )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5 sm:grid-cols-2">
+    <form action={action} className="grid gap-5 sm:grid-cols-2">
+      <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       <div className="space-y-2">
         <Label htmlFor="p-name">Full name</Label>
         <Input id="p-name" name="name" required placeholder="Your name" />
@@ -46,14 +50,15 @@ export function PartnerForm() {
         <Label htmlFor="p-message">Message</Label>
         <Textarea id="p-message" name="message" rows={4} placeholder="Tell us about your land and what you have in mind..." />
       </div>
+      {state.error ? <p role="alert" className="text-sm text-destructive sm:col-span-2">{state.error}</p> : null}
       <div className="sm:col-span-2">
         <Button
           type="submit"
           size="lg"
-          disabled={loading}
+          disabled={isPending}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
         >
-          {loading ? 'Sending...' : 'Submit Partnership Inquiry'}
+          {isPending ? 'Sending...' : 'Submit Partnership Inquiry'}
         </Button>
       </div>
     </form>

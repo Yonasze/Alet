@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Building2 } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getSafeErpNextPath } from '@/lib/auth/safe-next'
 
 import { LoginForm } from './login-form'
 
@@ -11,7 +12,7 @@ type AdminLoginPageProps = {
 
 export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
   const { next } = await searchParams
-  const nextPath = next?.startsWith('/') ? next : '/erp'
+  const nextPath = getSafeErpNextPath(next)
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#eef1ed] px-4 py-10">
@@ -25,8 +26,8 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
 
         <Card className="rounded-lg">
           <CardHeader>
-            <CardTitle>Admin Login</CardTitle>
-            <CardDescription>Sign in with the admin user created in Supabase Auth.</CardDescription>
+            <CardTitle>Staff sign in</CardTitle>
+            <CardDescription>Use the work account and ERP role assigned by an administrator.</CardDescription>
           </CardHeader>
           <CardContent>
             <LoginForm nextPath={nextPath} />

@@ -1,6 +1,7 @@
 import { LandPlot, Hammer, TrendingUp } from 'lucide-react'
 import { SectionHeading } from '@/components/site/section-heading'
 import { PartnerForm } from '@/components/site/partner-form'
+import { getPublicProjects } from '@/services/projects/supabase-project-service'
 
 const steps = [
   {
@@ -20,7 +21,10 @@ const steps = [
   },
 ]
 
-export default function PartnerPage() {
+export default async function PartnerPage() {
+  const projects = await getPublicProjects()
+  const projectSlug = projects[0]?.slug ?? ''
+
   return (
     <>
       <section className="border-b border-border bg-primary py-16 text-limestone sm:py-20">
@@ -73,7 +77,7 @@ export default function PartnerPage() {
             description="Share a few details and our development team will follow up to explore the opportunity with you."
           />
           <div className="mt-10 rounded-sm border border-border bg-card p-6 sm:p-8">
-            <PartnerForm />
+            <PartnerForm projectSlug={projectSlug} />
           </div>
         </div>
       </section>

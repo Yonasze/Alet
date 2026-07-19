@@ -1,10 +1,14 @@
 import { cookies } from 'next/headers'
 
+import { getPublicSupabaseConfig } from '@/lib/supabase/public-config'
+
 import type {
   DocumentCategory,
   DocumentProject,
   DocumentStatus,
 } from '@/services/documents/document-types'
+
+export type { DocumentStatus } from '@/services/documents/document-types'
 
 const sessionCookieName = 'alet-erp-session'
 const documentBucket = 'erp-documents'
@@ -71,11 +75,9 @@ type DocumentPayload = {
 }
 
 async function getRequestContext() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const { url, anonKey } = getPublicSupabaseConfig()
   const accessToken = (await cookies()).get(sessionCookieName)?.value
 
-  if (!url || !anonKey) throw new Error('Missing Supabase environment variables')
   if (!accessToken) throw new Error('Your ERP session has expired. Sign in again.')
 
   return { url, anonKey, accessToken }

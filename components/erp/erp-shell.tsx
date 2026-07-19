@@ -19,34 +19,39 @@ import {
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import type { ErpModuleCode, ErpRoleCode } from '@/lib/auth/erp-access'
 import { cn } from '@/lib/utils'
 
 import { LogoutButton } from './logout-button'
 
 const navigationItems = [
-  { label: 'Dashboard', href: '/erp', icon: LayoutDashboard, title: 'Operations Dashboard' },
-  { label: 'Projects', href: '/erp/projects', icon: Building2, title: 'Projects Module' },
-  { label: 'Sales CRM', href: '/erp/sales', icon: Users, title: 'Sales CRM' },
-  { label: 'Finance', href: '/erp/finance', icon: WalletCards, title: 'Finance' },
-  { label: 'Construction', href: '/erp/construction', icon: Hammer, title: 'Construction' },
-  { label: 'Procurement', href: '/erp/procurement', icon: ClipboardList, title: 'Procurement' },
-  { label: 'Inventory', href: '/erp/inventory', icon: Package, title: 'Inventory' },
-  { label: 'Contractors', href: '/erp/contractors', icon: Factory, title: 'Contractors' },
-  { label: 'Documents', href: '/erp/documents', icon: FileText, title: 'Documents' },
-  { label: 'Events', href: '/erp/events', icon: ReceiptText, title: 'Events' },
+  { module: 'dashboard', label: 'Dashboard', href: '/erp', icon: LayoutDashboard, title: 'Operations Dashboard' },
+  { module: 'projects', label: 'Projects', href: '/erp/projects', icon: Building2, title: 'Projects Module' },
+  { module: 'sales', label: 'Sales CRM', href: '/erp/sales', icon: Users, title: 'Sales CRM' },
+  { module: 'finance', label: 'Finance', href: '/erp/finance', icon: WalletCards, title: 'Finance' },
+  { module: 'construction', label: 'Construction', href: '/erp/construction', icon: Hammer, title: 'Construction' },
+  { module: 'procurement', label: 'Procurement', href: '/erp/procurement', icon: ClipboardList, title: 'Procurement' },
+  { module: 'inventory', label: 'Inventory', href: '/erp/inventory', icon: Package, title: 'Inventory' },
+  { module: 'contractors', label: 'Contractors', href: '/erp/contractors', icon: Factory, title: 'Contractors' },
+  { module: 'documents', label: 'Documents', href: '/erp/documents', icon: FileText, title: 'Documents' },
+  { module: 'events', label: 'Events', href: '/erp/events', icon: ReceiptText, title: 'Events' },
 ] as const
 
 type ErpShellProps = {
   children: React.ReactNode
+  allowedModules: ErpModuleCode[]
+  userLabel: string
+  roles: ErpRoleCode[]
 }
 
 function isActivePath(pathname: string, href: string) {
   return href === '/erp' ? pathname === '/erp' : pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function ErpShell({ children }: ErpShellProps) {
+export function ErpShell({ children, allowedModules, userLabel, roles }: ErpShellProps) {
   const pathname = usePathname()
-  const activeItem = navigationItems.find((item) => isActivePath(pathname, item.href)) ?? navigationItems[0]
+  const visibleItems = navigationItems.filter((item) => allowedModules.includes(item.module))
+  const activeItem = visibleItems.find((item) => isActivePath(pathname, item.href)) ?? visibleItems[0]
 
   return (
     <div className="min-h-screen bg-[#eef1ed] text-foreground">
@@ -64,7 +69,7 @@ export function ErpShell({ children }: ErpShellProps) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4" aria-label="ERP modules">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const active = isActivePath(pathname, item.href)
             return (
               <Link
@@ -109,6 +114,10 @@ export function ErpShell({ children }: ErpShellProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <div className="hidden text-right md:block">
+                <p className="max-w-48 truncate text-xs font-medium">{userLabel}</p>
+                <p className="text-[11px] text-muted-foreground">{roles.join(', ')}</p>
+              </div>
               <Button variant="outline" size="sm" aria-label="Notifications">
                 <Bell className="size-4" aria-hidden="true" />
               </Button>
@@ -119,6 +128,22 @@ export function ErpShell({ children }: ErpShellProps) {
             </div>
           </div>
         </header>
+
+        <nav className="flex gap-2 overflow-x-auto border-b bg-card px-4 py-2 lg:hidden" aria-label="ERP modules mobile">
+          {visibleItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActivePath(pathname, item.href) ? 'page' : undefined}
+              className={cn(
+                'shrink-0 rounded-md px-3 py-2 text-xs font-medium text-muted-foreground',
+                isActivePath(pathname, item.href) && 'bg-primary text-primary-foreground',
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
 
         <main className="px-4 py-6 lg:px-8">{children}</main>
       </div>

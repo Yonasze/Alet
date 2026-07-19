@@ -23,7 +23,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
       <input type="hidden" name="next" value={nextPath} />
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" placeholder="admin@alet.com" required />
+        <Input id="email" name="email" type="email" autoComplete="email" placeholder="name@aletrealestate.com" required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>

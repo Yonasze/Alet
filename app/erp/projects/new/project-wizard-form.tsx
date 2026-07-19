@@ -224,7 +224,6 @@ export function ProjectWizardForm() {
   const [highestFloorInput, setHighestFloorInput] = useState('10')
   const totalFloors = Math.max(0, Number.parseInt(highestFloorInput, 10) || 0)
   const [basementFloorInput, setBasementFloorInput] = useState('0')
-  const basementFloors = Math.min(20, Math.max(0, Number.parseInt(basementFloorInput, 10) || 0))
   const [typicalFloorStart, setTypicalFloorStart] = useState<number | ''>(0)
   const [typicalFloorEnd, setTypicalFloorEnd] = useState<number | ''>(10)
   const [newSpecialFloor, setNewSpecialFloor] = useState(0)
@@ -281,9 +280,9 @@ export function ProjectWizardForm() {
   ]
 
   const serializedTypicalUnits = typicalUnits.map(({ id, ...unit }) => ({ client_id: id, ...unit }))
-  const serializedSpecialFloors = specialFloors.map(({ id: _id, units, ...floor }) => ({
-    ...floor,
-    units: units.map(({ id, ...unit }) => ({ client_id: id, ...unit })),
+  const serializedSpecialFloors = specialFloors.map((floor) => ({
+    floor_number: floor.floor_number,
+    units: floor.units.map(({ id, ...unit }) => ({ client_id: id, ...unit })),
   }))
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

@@ -2,6 +2,7 @@ import { Phone, Mail, MapPin } from 'lucide-react'
 import { SectionHeading } from '@/components/site/section-heading'
 import { ContactForm } from '@/components/site/contact-form'
 import { company } from '@/lib/site'
+import { getPublicProjects } from '@/services/projects/supabase-project-service'
 
 const details = [
   { icon: Phone, label: 'Phone', value: company.phone, href: `tel:${company.phone}` },
@@ -9,7 +10,10 @@ const details = [
   { icon: MapPin, label: 'Office', value: company.address },
 ]
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const projects = await getPublicProjects()
+  const projectSlug = projects[0]?.slug ?? ''
+
   return (
     <>
       <section className="border-b border-border bg-primary py-16 text-limestone sm:py-20">
@@ -62,7 +66,7 @@ export default function ContactPage() {
           </div>
 
           <div className="rounded-sm border border-border bg-card p-6 sm:p-8">
-            <ContactForm />
+            <ContactForm projectSlug={projectSlug} />
           </div>
         </div>
       </section>

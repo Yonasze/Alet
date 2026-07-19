@@ -1,3 +1,5 @@
+import { getPublicSupabaseConfig } from '@/lib/supabase/public-config'
+
 export type SupabasePasswordSignInResult = {
   accessToken: string
   refreshToken: string
@@ -22,14 +24,7 @@ type SupabaseTokenResponse = {
 }
 
 function getAuthConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!url || !anonKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return { url, anonKey }
+  return getPublicSupabaseConfig()
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<SupabasePasswordSignInResult> {

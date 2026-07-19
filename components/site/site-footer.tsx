@@ -78,7 +78,7 @@ export function SiteFooter() {
             &copy; {new Date().getFullYear()} {company.name} ·{' '}
             <span className="font-ethiopic">{company.nameAm}</span>
           </p>
-          <Link href="/admin/login" className="hover:text-gold">
+          <Link href="/erp/login" className="hover:text-gold">
             Staff Login
           </Link>
         </div>

@@ -1,6 +1,6 @@
 'use server'
 
-import { getSupabaseServerConfig } from '@/lib/supabase/server'
+import { submitPublicProjectEnquiry } from '@/services/enquiries/public-enquiry-service'
 
 export type EnquiryState = { error?: string; success?: boolean }
 
@@ -13,7 +13,6 @@ export async function submitEnquiryAction(
   _state: EnquiryState,
   formData: FormData,
 ): Promise<EnquiryState> {
-  const { url, anonKey } = getSupabaseServerConfig()
   const payload = {
     project_slug: projectSlug,
     name: value(formData, 'name'),
@@ -29,16 +28,9 @@ export async function submitEnquiryAction(
   }
 
   try {
-    const response = await fetch(`${url}/rest/v1/rpc/submit_project_enquiry`, {
-      method: 'POST',
-      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payload }),
-      cache: 'no-store',
-    })
-    const result = await response.json().catch(() => ({})) as { message?: string; accepted?: boolean }
-    if (!response.ok || !result.accepted) return { error: result.message ?? 'We could not send your enquiry. Please try again.' }
+    await submitPublicProjectEnquiry(payload)
     return { success: true }
-  } catch {
-    return { error: 'We could not send your enquiry. Please try again.' }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'We could not send your enquiry. Please try again.' }
   }
 }

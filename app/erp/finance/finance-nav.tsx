@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import {BadgeDollarSign,Banknote,FileCheck2,Landmark,ReceiptText,UsersRound,WalletCards} from 'lucide-react'
+import {BadgeDollarSign,Banknote,Landmark,ReceiptText,UsersRound,WalletCards} from 'lucide-react'
 const items=[
  {href:'/erp/finance',label:'Dashboard',icon:Landmark},
  {href:'/erp/finance/receivables',label:'Receivables',icon:WalletCards},

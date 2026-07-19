@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import {notFound} from 'next/navigation'
-import {ArrowLeft,CalendarDays,CircleDollarSign,UserRound} from 'lucide-react'
+import {ArrowLeft} from 'lucide-react'
 import {Badge} from '@/components/ui/badge'
 import {Button} from '@/components/ui/button'
 import {Card,CardContent,CardDescription,CardHeader,CardTitle} from '@/components/ui/card'

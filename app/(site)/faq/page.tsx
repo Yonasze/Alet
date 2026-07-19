@@ -54,7 +54,7 @@ export default function FaqPage() {
             title="What buyers and partners ask us most"
             className="mb-10"
           />
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion className="w-full">
             {faqs.map((f, i) => (
               <AccordionItem key={i} value={`item-${i}`}>
                 <AccordionTrigger className="text-left font-serif text-lg text-primary">
