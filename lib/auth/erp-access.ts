@@ -33,13 +33,13 @@ export type ErpModuleCode = (typeof erpModuleCodes)[number]
 const moduleRoles: Record<ErpModuleCode, readonly ErpRoleCode[]> = {
   dashboard: erpRoleCodes,
   projects: erpRoleCodes,
-  sales: ['admin', 'project_manager', 'marketing', 'sales', 'finance'],
+  sales: ['admin', 'project_manager', 'sales', 'finance'],
   finance: ['admin', 'project_manager', 'finance'],
   construction: ['admin', 'project_manager', 'engineer'],
   procurement: ['admin', 'project_manager', 'procurement', 'finance', 'engineer', 'inventory'],
   inventory: ['admin', 'project_manager', 'procurement', 'finance', 'engineer', 'inventory'],
   contractors: ['admin', 'project_manager', 'procurement', 'finance', 'engineer'],
-  documents: erpRoleCodes,
+  documents: ['admin', 'project_manager', 'procurement', 'finance', 'engineer', 'inventory', 'sales', 'marketing', 'viewer'],
   events: erpRoleCodes,
 }
 

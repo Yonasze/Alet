@@ -87,7 +87,6 @@ export async function createConfirmedAdminUser({
         id: payload.id,
         organization_id: organizationId,
         full_name: email.split('@')[0],
-        role: 'admin',
       }),
     })
 
