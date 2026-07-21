@@ -13,19 +13,19 @@ const faqs = [
   },
   {
     q: 'What does the contract process look like?',
-    a: 'After you reserve a unit, we prepare a formal sales agreement that clearly sets out the unit, price, payment schedule, specifications, and expected handover. You review it at your own pace, and we are happy to walk through every clause before you sign.',
+    a: 'After you choose a unit, we prepare a formal sales agreement that clearly sets out the unit, price, payment schedule, specifications, and expected handover. You review it at your own pace, and we are happy to walk through every clause before you sign.',
   },
   {
     q: 'What happens if the project changes?',
-    a: 'Material changes are communicated to all buyers in writing. Your agreement defines what is fixed and what may be adjusted. If a significant change affects your unit, we work with you on a fair resolution — including agreed remedies set out in the contract.',
+    a: 'Material changes are communicated to all buyers in writing. Your agreement defines what is fixed and what may be adjusted. If a significant change affects your unit, we work with you on a fair resolution â€” including agreed remedies set out in the contract.',
   },
   {
     q: 'What timeline should I expect?',
-    a: 'Each project has a published construction timeline with key milestones — groundbreaking, foundation, structure, finishing, and handover. We share regular progress updates, and our payment schedule is aligned to these milestones rather than fixed dates alone.',
+    a: 'Each project has a published construction timeline with key milestones â€” groundbreaking, foundation, structure, finishing, and handover. We share regular progress updates, and our payment schedule is aligned to these milestones rather than fixed dates alone.',
   },
   {
     q: 'Is my reservation deposit refundable?',
-    a: 'Yes — the reservation deposit secures your unit and is refundable up to the point of signing the sales agreement, subject to the terms shared at reservation. Our team explains this clearly before you commit.',
+    a: 'Yes â€” the reservation deposit secures your unit and is refundable up to the point of signing the sales agreement, subject to the terms shared at reservation. Our team explains this clearly before you commit.',
   },
   {
     q: 'How do landowner partnerships work?',

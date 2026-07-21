@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { company } from '@/lib/site'
 
@@ -15,37 +16,17 @@ export function Logo({
       className={cn('group flex items-center gap-3', className)}
       aria-label={`${company.name} home`}
     >
-      <span
-        className={cn(
-          'flex size-10 shrink-0 items-center justify-center rounded-sm border',
-          invert
-            ? 'border-gold/40 bg-gold/10 text-gold'
-            : 'border-primary/20 bg-primary text-primary-foreground',
-        )}
-        aria-hidden="true"
-      >
-        {/* Stylized rock / strata mark */}
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          className="size-5"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        >
-          <path d="M12 3 4 8.5 12 14l8-5.5L12 3Z" />
-          <path d="M4 12.5 12 18l8-5.5" opacity="0.55" />
-          <path d="M4 16.5 12 22l8-5.5" opacity="0.3" />
-        </svg>
+      <span className={cn('flex size-12 shrink-0 items-center justify-center rounded-xl border p-1',invert?'border-gold/30 bg-white/5':'border-primary/10 bg-white shadow-sm')} aria-hidden="true">
+        <Image src="/brand/alet-mark-transparent.png" alt="" width={48} height={48} className="size-10 object-contain" priority/>
       </span>
       <span className="flex flex-col leading-none">
         <span
           className={cn(
-            'font-serif text-lg font-semibold tracking-tight',
+            'font-serif text-lg font-semibold tracking-[0.08em]',
             invert ? 'text-limestone' : 'text-primary',
           )}
         >
-          {company.name}
+          ALET REAL ESTATE
         </span>
         <span
           className={cn(

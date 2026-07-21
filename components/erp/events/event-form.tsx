@@ -29,6 +29,13 @@ export function EventForm({ projects, people }: { projects: EventProject[]; peop
       <div className="space-y-2"><Label htmlFor="event-location">Location</Label><Input id="event-location" name="location" placeholder="Site office or online link"/></div>
       <div className="space-y-2"><Label htmlFor="event-reminder">Reminder</Label><select id="event-reminder" name="reminder_minutes" defaultValue="60" className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"><option value="15">15 minutes before</option><option value="60">1 hour before</option><option value="1440">1 day before</option><option value="10080">1 week before</option></select></div>
       <div className="space-y-2 md:col-span-2"><Label htmlFor="event-description">Notes</Label><Textarea id="event-description" name="description" rows={3} placeholder="Agenda, preparation, or follow-up details"/></div>
+      <fieldset className="space-y-2 md:col-span-2">
+        <legend className="text-sm font-medium">Attendees</legend>
+        <div className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border bg-muted/25 p-3 sm:grid-cols-2">
+          {people.map(person=><label key={person.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-background"><input name="attendee_ids" value={person.id} type="checkbox" className="size-4 accent-primary"/>{person.full_name}</label>)}
+          {people.length===0?<p className="text-sm text-muted-foreground">No team members are available yet.</p>:null}
+        </div>
+      </fieldset>
       <label className="flex items-center gap-2 text-sm md:col-span-2"><input name="all_day" type="checkbox" className="size-4"/>All-day event</label>
     </div>
     {state.error ? <p className="text-sm text-destructive" role="alert">{state.error}</p> : null}
@@ -36,5 +43,3 @@ export function EventForm({ projects, people }: { projects: EventProject[]; peop
     <SubmitButton/>
   </form>
 }
-
-

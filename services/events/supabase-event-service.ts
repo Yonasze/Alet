@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { getSupabaseServerConfig } from '@/lib/supabase/server'
-import type { EventPerson, EventProject, ScheduledEvent } from './event-types'
+import type { EventNotification, EventPerson, EventProject, ScheduledEvent } from './event-types'
 
 const cookieName = 'alet-erp-session'
 
@@ -26,4 +26,6 @@ export async function getEventsWorkspace(): Promise<{ events: ScheduledEvent[]; 
   return { events: events as ScheduledEvent[], projects: projects as EventProject[], people: people as EventPerson[] }
 }
 
-
+export async function getEventNotifications(): Promise<EventNotification[]> {
+  return api('/rest/v1/event_notifications?select=id,event_id,project_id,title,message,delivered_at,read_at&order=delivered_at.desc&limit=100') as Promise<EventNotification[]>
+}

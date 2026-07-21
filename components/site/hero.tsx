@@ -6,12 +6,12 @@ import { company } from '@/lib/site'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-primary text-limestone">
+    <section className="relative overflow-hidden bg-[radial-gradient(circle_at_75%_15%,rgba(200,154,54,.22),transparent_27%),linear-gradient(135deg,#061f35_0%,#0a3152_60%,#082945_100%)] text-limestone">
       <div className="absolute inset-0 bg-strata-gold opacity-30" aria-hidden="true" />
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:py-28">
         <div className="relative">
           <p className="mb-6 text-xs font-semibold uppercase tracking-[0.25em] text-gold">
-            <span className="font-ethiopic">{company.nameAm}</span> · Addis Ababa
+            <span className="font-ethiopic">{company.nameAm}</span> Â· Addis Ababa
           </p>
           <h1 className="font-serif text-5xl font-semibold leading-[1.05] sm:text-6xl lg:text-7xl">
             <span className="block">Strong.</span>
@@ -19,7 +19,7 @@ export function Hero() {
             <span className="block">Estate.</span>
           </h1>
           <p className="mt-6 max-w-md text-pretty text-lg leading-relaxed text-limestone/75">
-            We develop and presell premium residential units — building lasting
+            We develop and presell premium residential units â€” building lasting
             value on solid foundations across the capital.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -29,7 +29,7 @@ export function Hero() {
               className="bg-gold text-primary hover:bg-gold/90"
             >
               <Link href="/project#register">
-                Reserve a Unit
+                Find Your Home
                 <ArrowRight className="size-4" />
               </Link>
             </Button>

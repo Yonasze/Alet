@@ -19,13 +19,13 @@ const notoEthiopic = Noto_Sans_Ethiopic({
 export const metadata: Metadata = {
   title: 'Alet Real Estate | Strong. Reliable. Estate.',
   description:
-    'Alet Real Estate (አለት ሪልስቴት) develops premium residential projects in Addis Ababa, Ethiopia. Reserve a unit or partner with us as a landowner.',
+    'Alet Real Estate (áŠ áˆˆá‰µ áˆªáˆáˆµá‰´á‰µ) develops premium residential projects in Addis Ababa, Ethiopia. Find a home or partner with us as a landowner.',
   generator: 'v0.app',
 }
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#1B3A4B',
+  themeColor: '#082945',
 }
 
 export default function RootLayout({

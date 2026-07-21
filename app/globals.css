@@ -58,43 +58,43 @@
   color-scheme: light;
 
   /* Brand palette */
-  --navy: #1b3a4b;
-  --gold: #c8a96e;
-  --limestone: #f5f2ec;
+  --navy: #082945;
+  --gold: #c79a36;
+  --limestone: #f8f5ed;
   --sage: #8faf8a;
 
-  --background: #f5f2ec;
-  --foreground: #20302f;
-  --card: #fffdf8;
-  --card-foreground: #20302f;
+  --background: #f8f5ed;
+  --foreground: #102b3e;
+  --card: #fffefa;
+  --card-foreground: #102b3e;
   --popover: #fffdf8;
   --popover-foreground: #20302f;
-  --primary: #1b3a4b;
+  --primary: #082945;
   --primary-foreground: #f5f2ec;
   --secondary: #ebe6db;
   --secondary-foreground: #1b3a4b;
   --muted: #ece7dc;
   --muted-foreground: #6f7b76;
-  --accent: #c8a96e;
-  --accent-foreground: #1b3a4b;
+  --accent: #c79a36;
+  --accent-foreground: #082945;
   --destructive: oklch(0.577 0.245 27.325);
   --border: #ddd6c7;
   --input: #ddd6c7;
-  --ring: #c8a96e;
-  --chart-1: #1b3a4b;
-  --chart-2: #c8a96e;
+  --ring: #c79a36;
+  --chart-1: #082945;
+  --chart-2: #c79a36;
   --chart-3: #8faf8a;
   --chart-4: #6f7b76;
   --chart-5: #2e5060;
   --radius: 0.5rem;
-  --sidebar: #1b3a4b;
+  --sidebar: #082945;
   --sidebar-foreground: #e9e3d6;
-  --sidebar-primary: #c8a96e;
-  --sidebar-primary-foreground: #1b3a4b;
-  --sidebar-accent: #244a5c;
+  --sidebar-primary: #c79a36;
+  --sidebar-primary-foreground: #082945;
+  --sidebar-accent: #123d5d;
   --sidebar-accent-foreground: #f5f2ec;
   --sidebar-border: #2e5060;
-  --sidebar-ring: #c8a96e;
+  --sidebar-ring: #c79a36;
 }
 
 .dark {
@@ -175,6 +175,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at 95% 5%, color-mix(in srgb, var(--gold) 9%, transparent), transparent 25rem);
   }
   html {
     @apply font-sans;
@@ -188,7 +189,7 @@
 }
 
 @layer utilities {
-  /* Subtle horizontal strata lines — geometric, premium, no imagery */
+  /* Subtle horizontal strata lines â€” geometric, premium, no imagery */
   .bg-strata {
     background-image: repeating-linear-gradient(
       0deg,

@@ -25,6 +25,16 @@ export type ScheduledEvent = {
   completed_at: string | null
 }
 
+export type EventNotification = {
+  id: string
+  event_id: string
+  project_id: string
+  title: string
+  message: string
+  delivered_at: string
+  read_at: string | null
+}
+
 export function eventLabel(value: string) {
   return value.replaceAll('_',' ').replace(/\b\w/g, character => character.toUpperCase())
 }
@@ -36,4 +46,12 @@ export function eventDate(value: string, includeTime = true) {
   }).format(new Date(value))
 }
 
-
+export function eventInputDate(value: string | null) {
+  if (!value) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Addis_Ababa', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(value))
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(item => item.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+}
