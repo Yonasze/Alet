@@ -14,10 +14,10 @@ const gallery = [
 ]
 
 const unitTypes = [
-  { name: 'Studio', size: '42 m²', price: 'from ETB 4.2M', desc: 'Efficient open-plan living, ideal for first-time buyers and investors.' },
-  { name: '1 Bedroom', size: '58 m²', price: 'from ETB 5.8M', desc: 'A bright bedroom, full kitchen, and private balcony with city views.' },
-  { name: '2 Bedroom', size: '86 m²', price: 'from ETB 8.4M', desc: 'Family-friendly layout with two bedrooms and a generous living area.' },
-  { name: '3 Bedroom', size: '120 m²', price: 'from ETB 12.5M', desc: 'Premium corner residences with expansive space and dual aspect light.' },
+  { name: 'Studio', size: '42 mÂ²', price: 'from ETB 4.2M', desc: 'Efficient open-plan living, ideal for first-time buyers and investors.' },
+  { name: '1 Bedroom', size: '58 mÂ²', price: 'from ETB 5.8M', desc: 'A bright bedroom, full kitchen, and private balcony with city views.' },
+  { name: '2 Bedroom', size: '86 mÂ²', price: 'from ETB 8.4M', desc: 'Family-friendly layout with two bedrooms and a generous living area.' },
+  { name: '3 Bedroom', size: '120 mÂ²', price: 'from ETB 12.5M', desc: 'Premium corner residences with expansive space and dual aspect light.' },
 ]
 
 const payment = [
@@ -103,7 +103,7 @@ export default function ProjectPage() {
           <SectionHeading
             eyebrow="Presale Schedule"
             title="A clear, structured payment plan"
-            description="Spread across the build, your payments are tied to real progress — never ahead of it."
+            description="Spread across the build, your payments are tied to real progress â€” never ahead of it."
           />
           <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {payment.map((p, i) => (
@@ -160,12 +160,12 @@ export default function ProjectPage() {
           <SectionHeading
             eyebrow="Location"
             title="At the centre of it all in Bole"
-            description="Minutes from Bole International Airport, premier shopping, schools, and the business district — Alet Heights places everyday convenience at your door."
+            description="Minutes from Bole International Airport, premier shopping, schools, and the business district â€” Alet Heights places everyday convenience at your door."
           />
           <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-sm border border-border bg-secondary bg-strata">
             <div className="flex flex-col items-center text-muted-foreground">
               <MapPin className="size-8 text-accent" />
-              <span className="mt-2 text-sm">Map placeholder — {project.location}</span>
+              <span className="mt-2 text-sm">Map placeholder â€” {project.location}</span>
             </div>
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function ProjectPage() {
             align="center"
             invert
             eyebrow="Register Interest"
-            title="Reserve your place at Alet Heights"
+            title="Find your home at Alet Heights"
             description="Share your details and our team will reach out with availability, pricing, and next steps."
           />
           <div className="mt-10 rounded-sm border border-limestone/15 bg-card p-6 text-foreground sm:p-8">

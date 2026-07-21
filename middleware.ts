@@ -11,13 +11,14 @@ function hasSupabaseSessionCookie(request: NextRequest): boolean {
 
 export function middleware(request: NextRequest) {
   const isErpRoute = request.nextUrl.pathname.startsWith('/erp')
+  const isLoginRoute = request.nextUrl.pathname === '/erp/login'
 
-  if (!isErpRoute) {
+  if (!isErpRoute || isLoginRoute) {
     return NextResponse.next()
   }
 
   if (!hasSupabaseSessionCookie(request)) {
-    const loginUrl = new URL('/admin/login', request.url)
+    const loginUrl = new URL('/erp/login', request.url)
     loginUrl.searchParams.set('next', request.nextUrl.pathname)
     return NextResponse.redirect(loginUrl)
   }

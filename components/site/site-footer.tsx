@@ -8,7 +8,10 @@ export function SiteFooter() {
     <footer className="bg-primary text-limestone">
       <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-3">
         <div className="space-y-4">
-          <Logo invert />
+          <Logo
+            invert
+            className="inline-flex rounded-2xl border border-gold/20 bg-white/5 p-4"
+          />
           <p className="max-w-xs text-sm leading-relaxed text-limestone/60">
             {company.tagline} Building lasting value through quality
             development in Addis Ababa.

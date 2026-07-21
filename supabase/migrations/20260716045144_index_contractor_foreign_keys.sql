@@ -1,0 +1,14 @@
+create index if not exists contractor_compliance_org_idx on public.contractor_compliance_documents(organization_id);
+create index if not exists contractor_compliance_verified_by_idx on public.contractor_compliance_documents(verified_by);
+create index if not exists contractor_contracts_approved_by_idx on public.contractor_contracts(approved_by);
+create index if not exists contractor_contracts_created_by_idx on public.contractor_contracts(created_by);
+create index if not exists contractor_contracts_org_idx on public.contractor_contracts(organization_id);
+create index if not exists contractor_evaluations_contract_idx on public.contractor_evaluations(contract_id);
+create index if not exists contractor_evaluations_evaluated_by_idx on public.contractor_evaluations(evaluated_by);
+create index if not exists contractor_evaluations_org_idx on public.contractor_evaluations(organization_id);
+create index if not exists contractor_claims_certified_by_idx on public.contractor_progress_claims(certified_by);
+create index if not exists contractor_claims_created_by_idx on public.contractor_progress_claims(created_by);
+create index if not exists contractor_claims_org_idx on public.contractor_progress_claims(organization_id);
+create index if not exists contractor_claims_submitted_by_idx on public.contractor_progress_claims(submitted_by);
+create index if not exists contractors_approved_by_idx on public.contractors(approved_by);
+create index if not exists contractors_created_by_idx on public.contractors(created_by);
