@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Globe, Camera, Briefcase, Send, Mail, Phone, MapPin } from 'lucide-react'
+import { Logo } from '@/components/site/logo'
 import { company, siteNav } from '@/lib/site'
 
 export function SiteFooter() {
@@ -8,9 +8,10 @@ export function SiteFooter() {
     <footer className="bg-primary text-limestone">
       <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-3">
         <div className="space-y-4">
-          <Link href="/" aria-label={`${company.name} home`} className="inline-block rounded-xl border border-gold/20 bg-white/5 p-3">
-            <Image src="/brand/alet-logo-transparent-tight.png" alt="ALET Real Estate" width={118} height={156} className="h-28 w-auto object-contain"/>
-          </Link>
+          <Logo
+            invert
+            className="inline-flex rounded-2xl border border-gold/20 bg-white/5 p-4"
+          />
           <p className="max-w-xs text-sm leading-relaxed text-limestone/60">
             {company.tagline} Building lasting value through quality
             development in Addis Ababa.
@@ -77,7 +78,7 @@ export function SiteFooter() {
       <div className="border-t border-limestone/10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-limestone/50 sm:flex-row sm:px-6">
           <p>
-            &copy; {new Date().getFullYear()} {company.name} Â·{' '}
+            &copy; {new Date().getFullYear()} {company.name} ·{' '}
             <span className="font-ethiopic">{company.nameAm}</span>
           </p>
           <Link href="/admin/login" className="hover:text-gold">
